@@ -42,13 +42,13 @@ namespace dog_hardware
 
             double initial_pos = 0.0;
 
-            if (jd.name.find("HipX") != std::string::npos)
-                initial_pos = (jd.name.find("L_") != std::string::npos) ? -0.4 : 0.4;
+            if (jd.name.find("HAA") != std::string::npos)
+                initial_pos = (jd.name.find("L") != std::string::npos) ? -0.4 : 0.4;
 
-            else if (jd.name.find("HipY") != std::string::npos)
+            else if (jd.name.find("HFE") != std::string::npos)
                 initial_pos = -1.2;
 
-            else if (jd.name.find("Knee") != std::string::npos)
+            else if (jd.name.find("KFE") != std::string::npos)
                 initial_pos = 2.8;
 
             jd.gz_joint->SetPosition(0, initial_pos);

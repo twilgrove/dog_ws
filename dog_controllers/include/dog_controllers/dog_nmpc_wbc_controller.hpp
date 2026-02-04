@@ -1,8 +1,14 @@
 #pragma once
 #include "controller_interface/controller_interface.hpp"
-#include "dog_data_bridge.hpp"
 #include "state_estimation/StateEstimatorBase.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include <ament_index_cpp/get_package_share_directory.hpp>
+
+#include "common/dog_data_bridge.hpp"
+#include "common/dog_interface.hpp"
+
+#include <ocs2_legged_robot/LeggedRobotInterface.h>
 
 namespace dog_controllers
 {
@@ -22,13 +28,14 @@ namespace dog_controllers
         controller_interface::return_type update(const rclcpp::Time &time, const rclcpp::Duration &period) override;
 
     private:
-        DogDataBridge bridge_;
-        std::shared_ptr<StateEstimatorBase> state_estimator_;
+        std::unique_ptr<DogDataBridge> bridge_;
+        std::unique_ptr<StateEstimatorBase> state_estimator_;
+        std::unique_ptr<DogInterface> dog_interface_;
+        // std::unique_ptr<ocs2::legged_robot::LeggedRobotInterface> dog_interface_;
 
         rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
-
-        std::vector<std::string> joint_names_;
-        std::vector<std::string> contact_names_;
-        std::string imu_name_;
+        std::string urdfFile;
+        std::string taskFile;
+        std::string referenceFile;
     };
 }

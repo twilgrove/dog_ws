@@ -1,7 +1,7 @@
 #pragma once
 
 #include <rclcpp/rclcpp.hpp>
-#include "dog_data_bridge.hpp"
+#include "common/dog_data_bridge.hpp"
 #include <ocs2_core/Types.h>
 #include <ocs2_pinocchio_interface/PinocchioInterface.h>
 #include <ocs2_centroidal_model/CentroidalModelInfo.h>
@@ -31,15 +31,13 @@ namespace dog_controllers
     {
     public:
         // 构造函数
-        StateEstimatorBase() = default;
+        StateEstimatorBase(const DogDataBridge *bridge,
+                           PinocchioInterface pinocchioInterface,
+                           CentroidalModelInfo info,
+                           PinocchioEndEffectorKinematics &eeKinematics);
         ~StateEstimatorBase() = default;
 
-        void init(const DogDataBridge *bridge,
-                  PinocchioInterface pinocchioInterface,
-                  CentroidalModelInfo info,
-                  PinocchioEndEffectorKinematics &eeKinematics);
-
-        virtual const vector_t &estimate() = 0;
+        // virtual const vector_t &estimate() = 0;
 
         const DogDataBridge *bridgePtr_;
 

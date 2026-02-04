@@ -51,10 +51,10 @@
         <origin xyz="0 0 0" rpy="0 0 0"/>
     </joint>
 
-    <xacro:dog_leg name="FL" mirror="1" f_b="1"/>
-    <xacro:dog_leg name="FR" mirror="-1" f_b="1"/>
-    <xacro:dog_leg name="HL" mirror="1" f_b="-1"/>
-    <xacro:dog_leg name="HR" mirror="-1" f_b="-1"/>
+    <xacro:dog_leg name="LF" mirror="1" f_b="1"/>
+    <xacro:dog_leg name="LH" mirror="1" f_b="-1"/>
+    <xacro:dog_leg name="RF" mirror="-1" f_b="1"/>
+    <xacro:dog_leg name="RH" mirror="-1" f_b="-1"/>
 
     <ros2_control name="dog_System" type="system">
         <hardware>
@@ -83,15 +83,15 @@
             <state_interface name="linear_acceleration_covariance"/>
         </sensor>
 
-        <sensor name="FL_contact_sensor"> <state_interface name="contact"/></sensor>
-        <sensor name="FR_contact_sensor"> <state_interface name="contact"/></sensor>
-        <sensor name="HL_contact_sensor"> <state_interface name="contact"/></sensor>
-        <sensor name="HR_contact_sensor"> <state_interface name="contact"/></sensor>
+        <sensor name="LF_contact_sensor"> <state_interface name="contact"/></sensor>
+        <sensor name="LH_contact_sensor"> <state_interface name="contact"/></sensor>
+        <sensor name="RF_contact_sensor"> <state_interface name="contact"/></sensor>
+        <sensor name="RH_contact_sensor"> <state_interface name="contact"/></sensor>
         
-        <xacro:leg_control_interface name="FL"/>
-        <xacro:leg_control_interface name="FR"/>
-        <xacro:leg_control_interface name="HL"/>
-        <xacro:leg_control_interface name="HR"/>
+        <xacro:leg_control_interface name="LF"/>
+        <xacro:leg_control_interface name="LH"/>
+        <xacro:leg_control_interface name="RF"/>
+        <xacro:leg_control_interface name="RH"/>
     </ros2_control>
 
     <gazebo reference="imu_link">
@@ -125,5 +125,17 @@
             <robot_param_node>robot_state_publisher</robot_param_node>
         </plugin>
     </gazebo>
-
+    <gazebo>
+      <plugin name="dog_ground_truth" filename="libgazebo_ros_p3d.so">
+        <ros>
+          <remapping>odom:=/ground_truth</remapping>
+        </ros>
+        <body_name>base_link</body_name>
+        <frame_name>world</frame_name>
+        <update_rate>1000.0</update_rate>
+        <xyz_offset>0 0 0</xyz_offset>
+        <rpy_offset>0 0 0</rpy_offset>
+        <gaussian_noise>0.001</gaussian_noise>
+      </plugin>
+    </gazebo>
 </robot>

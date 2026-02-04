@@ -22,7 +22,7 @@
             </collision>
         </link>
 
-        <joint name="${name}_HipX_joint" type="revolute">
+        <joint name="${name}_HAA" type="revolute">
             <origin xyz="${f_b * hip_offset_x} ${mirror * hip_offset_y} 0"/>
             <parent link="TORSO"/>
             <child link="${name}_HIP"/>
@@ -50,7 +50,7 @@
             </collision>
         </link>
 
-        <joint name="${name}_HipY_joint" type="revolute">
+        <joint name="${name}_HFE" type="revolute">
             <origin xyz="0 ${mirror * thigh_offset_y} 0"/>
             <parent link="${name}_HIP"/>
             <child link="${name}_THIGH"/>
@@ -84,7 +84,7 @@
             </collision>
         </link>
 
-        <joint name="${name}_Knee_joint" type="revolute">
+        <joint name="${name}_KFE" type="revolute">
             <origin xyz="0 0 ${shank_offset_z}"/>
             <parent link="${name}_THIGH"/>
             <child link="${name}_SHANK"/>

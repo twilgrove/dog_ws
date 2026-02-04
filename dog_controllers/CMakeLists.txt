@@ -14,29 +14,58 @@ find_package(rclcpp REQUIRED)
 find_package(controller_interface REQUIRED)
 find_package(hardware_interface REQUIRED)
 find_package(pluginlib REQUIRED)
+find_package(ament_index_cpp REQUIRED)
+find_package(Eigen3 REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system thread log log_setup)
+
+find_package(geometry_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+
+find_package(ament_cmake REQUIRED)
+find_package(urdf REQUIRED)
+find_package(urdfdom REQUIRED)
+find_package(Boost REQUIRED COMPONENTS system filesystem log_setup log)
 find_package(ocs2_core REQUIRED)
+find_package(ocs2_legged_robot REQUIRED)
 find_package(ocs2_pinocchio_interface REQUIRED)
 find_package(ocs2_centroidal_model REQUIRED)
-find_package(Eigen3 REQUIRED)
 
-# 测试控制插件
+# 控制插件
 add_library(
-   dog_nmpc_wbc_controller SHARED
-  src/dog_nmpc_wbc_controller.cpp src/dog_data_bridge.cpp
-  src/state_estimation/StateEstimatorBase.cpp)
-target_include_directories(dog_nmpc_wbc_controller PRIVATE include/dog_controllers
-                                                       ${EIGEN3_INCLUDE_DIRS})
+  dog_nmpc_wbc_controller SHARED
+  src/dog_nmpc_wbc_controller.cpp src/common/dog_data_bridge.cpp
+  src/state_estimation/StateEstimatorBase.cpp src/common/dog_interface.cpp)
+
+target_include_directories(
+  dog_nmpc_wbc_controller
+  PRIVATE include/dog_controllers ${EIGEN3_INCLUDE_DIRS}
+          ${pinocchio_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
+
 ament_target_dependencies(
   dog_nmpc_wbc_controller
   rclcpp
   controller_interface
   hardware_interface
   ocs2_core
+  ocs2_legged_robot
   ocs2_pinocchio_interface
   ocs2_centroidal_model
   Boost
-  Eigen3)
+  Eigen3
+  ament_index_cpp
+  geometry_msgs
+  sensor_msgs
+  nav_msgs
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
+  urdf
+  urdfdom)
+
 pluginlib_export_plugin_description_file(controller_interface
                                          dog_controllers.xml)
 

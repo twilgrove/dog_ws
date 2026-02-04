@@ -4,6 +4,7 @@
 #include <array>
 #include "hardware_interface/loaned_state_interface.hpp"
 #include "hardware_interface/loaned_command_interface.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
 
 namespace dog_controllers
 {
@@ -33,14 +34,11 @@ namespace dog_controllers
     class DogDataBridge
     {
     public:
-        DogDataBridge() = default;
-        ~DogDataBridge() = default;
-        bool setup(
+        DogDataBridge(
             std::vector<hardware_interface::LoanedStateInterface> &state_interfaces,
             std::vector<hardware_interface::LoanedCommandInterface> &command_interfaces,
-            const std::vector<std::string> &joint_names,
-            const std::vector<std::string> &contact_names,
-            const std::string &imu_name);
+            rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
+        ~DogDataBridge() = default;
 
         void read_from_hw();
         void write_to_hw();
@@ -63,5 +61,10 @@ namespace dog_controllers
 
         std::vector<ReadTask> read_tasks_;
         std::vector<WriteTask> write_tasks_;
+
+        rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
+        std::vector<std::string> joint_names_;
+        std::vector<std::string> contact_names_;
+        std::string imu_name_;
     };
 }

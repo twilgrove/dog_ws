@@ -13,16 +13,14 @@
   <depend>pluginlib</depend>
   <depend>controller_interface</depend>
   <depend>hardware_interface</depend>
+  <depend>ocs2_pinocchio_interface</depend>
   <depend>dog_common</depend>
   <depend>tf2_ros</depend>
   <depend>eigen</depend>
-  <depend>pinocchio</depend>
   <depend>boost</depend>
-  <depend>ocs2_core</depend>
-  <depend>ocs2_pinocchio_interface</depend>
-  <depend>ocs2_centroidal_model</depend>
 
- 
+
+  <depend>ament_index_cpp</depend>
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
 

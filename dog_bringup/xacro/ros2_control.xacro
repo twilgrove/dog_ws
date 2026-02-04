@@ -3,7 +3,7 @@
 
     <xacro:macro name="leg_control_interface" params="name">
         
-        <joint name="${name}_HipX_joint">
+        <joint name="${name}_HAA">
             <command_interface name="effort">
                 <param name="min">-${hipx_eff}</param>
                 <param name="max">${hipx_eff}</param>
@@ -21,7 +21,7 @@
             <state_interface name="effort"/>
         </joint>
 
-        <joint name="${name}_HipY_joint">
+        <joint name="${name}_HFE">
             <command_interface name="effort">
                 <param name="min">-${hipy_eff}</param>
                 <param name="max">${hipy_eff}</param>
@@ -39,7 +39,7 @@
             <state_interface name="effort"/>
         </joint>
 
-        <joint name="${name}_Knee_joint">
+        <joint name="${name}_KFE">
             <command_interface name="effort">
                 <param name="min">-${knee_eff}</param>
                 <param name="max">${knee_eff}</param>

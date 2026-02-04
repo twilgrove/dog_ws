@@ -1,22 +1,24 @@
-#include "dog_data_bridge.hpp"
+#include "common/dog_data_bridge.hpp"
 
 namespace dog_controllers
 {
-    bool DogDataBridge::setup(
+    DogDataBridge::DogDataBridge(
         std::vector<hardware_interface::LoanedStateInterface> &state_interfaces,
         std::vector<hardware_interface::LoanedCommandInterface> &command_interfaces,
-        const std::vector<std::string> &joint_names,
-        const std::vector<std::string> &contact_names,
-        const std::string &imu_name)
+        rclcpp_lifecycle::LifecycleNode::SharedPtr &node) : node_(node)
     {
+        joint_names_ = node_->get_parameter("joints").as_string_array();
+        contact_names_ = node_->get_parameter("contacts").as_string_array();
+        imu_name_ = "imu_sensor";
+
         // 1. 初始化结构
-        const std::string leg_prefixes[4] = {"FL", "FR", "HL", "HR"};
-        imu.name = imu_name;
+        const std::string leg_prefixes[4] = {"LF", "LH", "RF", "RH"};
+        imu.name = imu_name_;
         for (int i = 0; i < 4; ++i)
         {
             legs[i].name = leg_prefixes[i];
             for (int j = 0; j < 3; ++j)
-                legs[i].joints[j]->name = joint_names[i * 3 + j];
+                legs[i].joints[j]->name = joint_names_[i * 3 + j];
         }
 
         read_tasks_.clear();
@@ -44,7 +46,7 @@ namespace dog_controllers
                     }
                 }
                 // 触地
-                if (prefix == contact_names[i] && inf == "contact")
+                if (prefix == contact_names_[i] && inf == "contact")
                     read_tasks_.push_back({&si, &legs[i].contact});
             }
             // IMU
@@ -100,8 +102,12 @@ namespace dog_controllers
             }
         }
         if (write_tasks_.size() != 60 || read_tasks_.size() != 50)
-            return false;
-        return true;
+        {
+            RCLCPP_ERROR(node_->get_logger(),
+                         "DogDataBridge 映射任务数量错误！读任务数: %zu, 写任务数: %zu",
+                         read_tasks_.size(), write_tasks_.size());
+        }
+        RCLCPP_INFO(node_->get_logger(), "核心类: DogDataBridge 初始化完成！");
     }
 
     void DogDataBridge::read_from_hw()
