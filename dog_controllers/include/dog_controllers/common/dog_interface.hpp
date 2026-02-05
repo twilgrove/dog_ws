@@ -5,22 +5,25 @@
 namespace dog_controllers
 {
     using namespace ocs2;
-    class DogInterface : public ocs2::RobotInterface
+    class DogInterface final : public RobotInterface
     {
     public:
         DogInterface(const std::string &taskFile, const std::string &urdfFile, const std::string &referenceFile);
 
-        const ocs2::OptimalControlProblem &getOptimalControlProblem() const override { return problem_; }
-        const ocs2::Initializer &getInitializer() const override { return *initializerPtr_; }
+        const OptimalControlProblem &getOptimalControlProblem() const override { return problem_; }
+        const Initializer &getInitializer() const override { return *initializerPtr_; }
 
+        const PinocchioInterface &getPinocchioInterface() const { return *pinocchioInterfacePtr_; }
+        const PinocchioEndEffectorKinematics &getEndEffectorKinematics() const { return *eeKinematicsPtr_; }
+        const CentroidalModelInfo &getCentroidalModelInfo() const { return centroidalModelInfo_; }
         // 核心成员
-        ocs2::legged_robot::ModelSettings modelSettings_;
-        ocs2::CentroidalModelInfo centroidalModelInfo_;
-        std::unique_ptr<ocs2::PinocchioInterface> pinocchioInterfacePtr_;
-        std::unique_ptr<ocs2::PinocchioEndEffectorKinematics> eeKinematicsPtr_;
+        legged_robot::ModelSettings modelSettings_;
+        CentroidalModelInfo centroidalModelInfo_;
+        std::unique_ptr<PinocchioInterface> pinocchioInterfacePtr_;
+        std::unique_ptr<PinocchioEndEffectorKinematics> eeKinematicsPtr_;
 
-        std::unique_ptr<ocs2::Initializer> initializerPtr_;
-        ocs2::OptimalControlProblem problem_;
+        std::unique_ptr<Initializer> initializerPtr_;
+        OptimalControlProblem problem_;
     };
 
 } // namespace dog_controllers

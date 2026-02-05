@@ -34,14 +34,18 @@ namespace dog_controllers
     CallbackReturn DogNmpcWbcController::on_activate(const rclcpp_lifecycle::State &)
     {
         bridge_ = std::make_unique<DogDataBridge>(state_interfaces_, command_interfaces_, node_);
-        dog_interface_ = std::make_unique<DogInterface>(taskFile, urdfFile, referenceFile);
-        state_estimator_ = std::make_unique<StateEstimatorBase>(
-            bridge_.get(),
-            *dog_interface_->pinocchioInterfacePtr_,
-            dog_interface_->centroidalModelInfo_,
-            *dog_interface_->eeKinematicsPtr_);
 
-        if (!bridge_ || !dog_interface_ || !state_estimator_)
+        dog_interface_ = std::make_unique<DogInterface>(taskFile, urdfFile, referenceFile);
+
+        state_estimator_ = std::make_unique<TopicEstimator>(
+            bridge_.get(),
+            dog_interface_->getPinocchioInterface(),
+            dog_interface_->getCentroidalModelInfo(),
+            dog_interface_->getEndEffectorKinematics(), node_);
+
+        debug_manager_ = std::make_unique<DebugManager>(node_);
+
+        if (!bridge_ || !dog_interface_ || !state_estimator_ || !debug_manager_)
         {
             RCLCPP_ERROR(node_->get_logger(), "核心类初始化错误！！");
             return CallbackReturn::ERROR;

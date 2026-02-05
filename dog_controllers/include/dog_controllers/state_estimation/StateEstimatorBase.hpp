@@ -1,15 +1,20 @@
 #pragma once
 
 #include <rclcpp/rclcpp.hpp>
+#include <rclcpp_lifecycle/lifecycle_node.hpp>
 #include "common/dog_data_bridge.hpp"
 #include <ocs2_core/Types.h>
 #include <ocs2_pinocchio_interface/PinocchioInterface.h>
 #include <ocs2_centroidal_model/CentroidalModelInfo.h>
 #include <ocs2_pinocchio_interface/PinocchioEndEffectorKinematics.h>
+#include <ocs2_robotic_tools/common/RotationTransforms.h>
 
 namespace dog_controllers
 {
     using namespace ocs2;
+    using quaternion_t = Eigen::Quaternion<scalar_t>;
+    using vector3_t = Eigen::Matrix<scalar_t, 3, 1>;
+    using matrix3_t = Eigen::Matrix<scalar_t, 3, 3>;
 
     struct EstimatorResults
     {
@@ -30,21 +35,26 @@ namespace dog_controllers
     class StateEstimatorBase
     {
     public:
-        // 构造函数
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         StateEstimatorBase(const DogDataBridge *bridge,
                            PinocchioInterface pinocchioInterface,
                            CentroidalModelInfo info,
-                           PinocchioEndEffectorKinematics &eeKinematics);
-        ~StateEstimatorBase() = default;
+                           const PinocchioEndEffectorKinematics &eeKinematics, rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
+        virtual ~StateEstimatorBase() = default;
 
-        // virtual const vector_t &estimate() = 0;
+        virtual const vector_t &estimate() = 0;
+        EstimatorResults results;
 
+    protected:
         const DogDataBridge *bridgePtr_;
+        const LegData *legsPtr_ = nullptr;
+        const ImuData *imuPtr_ = nullptr;
 
         PinocchioInterface pinocchioInterface_;
         CentroidalModelInfo centroidalModelInfo_;
         std::unique_ptr<PinocchioEndEffectorKinematics> eeKinematics_;
 
-        EstimatorResults results;
+        rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
+        void updateGenericResults();
     };
 }

@@ -7,7 +7,7 @@ controller_manager:
       delay: 0.009 # 仿真通信延迟，单位秒
     imu_params:
       accel:
-        variance: 0.01       # 测量协方差
+        variance: 0.0       # 测量协方差
         bias_mean: 0.0       # 静态偏置，模拟真机安装/芯片误差
       gyro:
         variance: 0.0004

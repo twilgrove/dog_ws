@@ -1,20 +1,21 @@
 #pragma once
 #include "controller_interface/controller_interface.hpp"
-#include "state_estimation/StateEstimatorBase.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include <ament_index_cpp/get_package_share_directory.hpp>
+#include <ocs2_legged_robot/LeggedRobotInterface.h>
 
 #include "common/dog_data_bridge.hpp"
 #include "common/dog_interface.hpp"
-
-#include <ocs2_legged_robot/LeggedRobotInterface.h>
+#include "common/debug_manager.hpp"
+#include "state_estimation/StateEstimatorBase.hpp"
+#include "state_estimation/TopicStateEstimator.hpp"
 
 namespace dog_controllers
 {
     using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
-    class DogNmpcWbcController : public controller_interface::ControllerInterface
+    class DogNmpcWbcController final : public controller_interface::ControllerInterface
     {
     public:
         DogNmpcWbcController() = default;
@@ -31,6 +32,7 @@ namespace dog_controllers
         std::unique_ptr<DogDataBridge> bridge_;
         std::unique_ptr<StateEstimatorBase> state_estimator_;
         std::unique_ptr<DogInterface> dog_interface_;
+        std::unique_ptr<DebugManager> debug_manager_;
         // std::unique_ptr<ocs2::legged_robot::LeggedRobotInterface> dog_interface_;
 
         rclcpp_lifecycle::LifecycleNode::SharedPtr node_;

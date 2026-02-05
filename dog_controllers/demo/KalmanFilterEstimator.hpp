@@ -1,7 +1,7 @@
 namespace dog_controllers
 {
 
-    class KalmanFilterEstimator : public StateEstimatorBase
+    class KalmanFilterEstimator final : public StateEstimatorBase
     {
     public:
         using StateEstimatorBase::StateEstimatorBase;
