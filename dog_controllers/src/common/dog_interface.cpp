@@ -49,8 +49,6 @@ namespace dog_controllers
             modelSettings_.contactNames3DoF,
             modelSettings_.contactNames6DoF);
 
-        // 5. (可选) 如果你之后要用到之前报错的 eeKinematicsPtr_
-        // 这里演示如何在类中初始化它（确保头文件已包含）
         const auto &model = pinocchioInterfacePtr_->getModel();
         ocs2::CentroidalModelPinocchioMapping pinocchioMapping(centroidalModelInfo_);
         eeKinematicsPtr_.reset(new ocs2::PinocchioEndEffectorKinematics(

@@ -30,10 +30,9 @@ namespace dog_controllers
 
     private:
         std::unique_ptr<DogDataBridge> bridge_;
-        std::unique_ptr<StateEstimatorBase> state_estimator_;
-        std::unique_ptr<DogInterface> dog_interface_;
         std::unique_ptr<DebugManager> debug_manager_;
-        // std::unique_ptr<ocs2::legged_robot::LeggedRobotInterface> dog_interface_;
+        std::unique_ptr<DogInterface> dog_interface_;
+        std::unique_ptr<StateEstimatorBase> state_estimator_;
 
         rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
         std::string urdfFile;

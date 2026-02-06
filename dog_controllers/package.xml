@@ -19,7 +19,7 @@
   <depend>tf2_ros</depend>
   <depend>eigen</depend>
   <depend>boost</depend>
-
+  <depend>dog_bringup</depend>
 
   <depend>ament_index_cpp</depend>
   <test_depend>ament_lint_auto</test_depend>

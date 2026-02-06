@@ -5,15 +5,27 @@
 #include <mutex>
 #include <memory>
 
-class DebugManager final
+#include "dog_bringup/msg/dog_state.hpp"
+#include "common/dog_data_bridge.hpp"
+#include "state_estimation/StateEstimatorBase.hpp"
+
+namespace dog_controllers
 {
-public:
-    DebugManager(rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
+    class DebugManager final
+    {
+    public:
+        DebugManager(const ImuData *imuPtr_, const EstimatorResults *results_, rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
 
-    void update();
+        void publish();
 
-private:
-    void publish();
+    private:
+        const ImuData *imuPtr_;
+        const EstimatorResults *results_;
 
-    rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
-};
+        int hz = 10;
+        int count = 0;
+        dog_bringup::msg::DogState stateMsg_;
+        rclcpp::Publisher<dog_bringup::msg::DogState>::SharedPtr statePub_;
+        rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
+    };
+}

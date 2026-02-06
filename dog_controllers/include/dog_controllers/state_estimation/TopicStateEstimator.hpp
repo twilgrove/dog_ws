@@ -9,7 +9,8 @@ namespace dog_controllers
     class TopicEstimator final : public StateEstimatorBase
     {
     public:
-        TopicEstimator(const DogDataBridge *bridge,
+        TopicEstimator(const LegData *legsPtr_,
+                       const ImuData *imuPtr_,
                        PinocchioInterface pinocchioInterface,
                        CentroidalModelInfo info,
                        const PinocchioEndEffectorKinematics &eeKinematics,

@@ -19,6 +19,7 @@ find_package(ament_index_cpp REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system thread log log_setup)
 
+find_package(dog_bringup REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
@@ -41,7 +42,7 @@ add_library(
   dog_nmpc_wbc_controller SHARED
   src/dog_nmpc_wbc_controller.cpp src/common/dog_data_bridge.cpp
   src/state_estimation/StateEstimatorBase.cpp src/common/dog_interface.cpp
-  src/state_estimation/TopicStateEstimator.cpp)
+  src/state_estimation/TopicStateEstimator.cpp src/common/debug_manager.cpp)
 
 target_include_directories(
   dog_nmpc_wbc_controller
@@ -58,6 +59,7 @@ ament_target_dependencies(
   ocs2_pinocchio_interface
   ocs2_centroidal_model
   ocs2_robotic_tools
+  dog_bringup
   Boost
   Eigen3
   ament_index_cpp

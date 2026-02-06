@@ -5,7 +5,7 @@
 namespace dog_controllers
 {
     using namespace ocs2;
-    class DogInterface final : public RobotInterface
+    class DogInterface final : public RobotInterface ////ocs2::legged_robot::LeggedRobotInterface
     {
     public:
         DogInterface(const std::string &taskFile, const std::string &urdfFile, const std::string &referenceFile);

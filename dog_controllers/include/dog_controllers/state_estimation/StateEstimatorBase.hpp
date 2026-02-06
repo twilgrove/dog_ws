@@ -36,7 +36,8 @@ namespace dog_controllers
     {
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-        StateEstimatorBase(const DogDataBridge *bridge,
+        StateEstimatorBase(const LegData *legsPtr_,
+                           const ImuData *imuPtr_,
                            PinocchioInterface pinocchioInterface,
                            CentroidalModelInfo info,
                            const PinocchioEndEffectorKinematics &eeKinematics, rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
@@ -46,7 +47,6 @@ namespace dog_controllers
         EstimatorResults results;
 
     protected:
-        const DogDataBridge *bridgePtr_;
         const LegData *legsPtr_ = nullptr;
         const ImuData *imuPtr_ = nullptr;
 
@@ -55,6 +55,35 @@ namespace dog_controllers
         std::unique_ptr<PinocchioEndEffectorKinematics> eeKinematics_;
 
         rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
+
         void updateGenericResults();
+
+        template <typename SCALAR_T>
+        inline Eigen::Matrix<SCALAR_T, 3, 1> quatToZyx(const Eigen::Quaternion<SCALAR_T> &q)
+        {
+            using vector3_t = Eigen::Matrix<SCALAR_T, 3, 1>;
+            vector3_t zyx;
+
+            const SCALAR_T w = q.w();
+            const SCALAR_T x = q.x();
+            const SCALAR_T y = q.y();
+            const SCALAR_T z = q.z();
+
+            SCALAR_T sinP = -2.0 * (x * z - w * y);
+
+            if (std::abs(sinP) >= 1.0)
+            {
+                zyx(1) = std::copysign(M_PI / 2.0, sinP);
+                zyx(2) = 0.0;
+                zyx(0) = std::atan2(2.0 * (x * y + w * z), 1.0 - 2.0 * (y * y + z * z));
+            }
+            else
+            {
+                zyx(1) = std::asin(sinP);
+                zyx(0) = std::atan2(2.0 * (x * y + w * z), 1.0 - 2.0 * (x * x + y * y));
+                zyx(2) = std::atan2(2.0 * (y * z + w * x), 1.0 - 2.0 * (x * x + y * y));
+            }
+            return zyx;
+        }
     };
 }
