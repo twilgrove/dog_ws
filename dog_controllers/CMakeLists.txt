@@ -40,9 +40,13 @@ find_package(ocs2_centroidal_model REQUIRED)
 # 控制插件
 add_library(
   dog_nmpc_wbc_controller SHARED
-  src/dog_nmpc_wbc_controller.cpp src/common/dog_data_bridge.cpp
-  src/state_estimation/StateEstimatorBase.cpp src/common/dog_interface.cpp
-  src/state_estimation/TopicStateEstimator.cpp src/common/debug_manager.cpp)
+  src/dog_nmpc_wbc_controller.cpp
+  src/common/dog_data_bridge.cpp
+  src/common/debug_manager.cpp
+  src/common/dog_interface.cpp
+  src/state_estimation/StateEstimatorBase.cpp
+  src/state_estimation/TopicStateEstimator.cpp
+  src/state_estimation/KalmanFilterEstimator.cpp)
 
 target_include_directories(
   dog_nmpc_wbc_controller

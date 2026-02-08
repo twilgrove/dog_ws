@@ -8,6 +8,7 @@
 #include "common/dog_data_bridge.hpp"
 #include "common/dog_interface.hpp"
 #include "common/debug_manager.hpp"
+#include "state_estimation/KalmanFilterEstimator.hpp"
 #include "state_estimation/StateEstimatorBase.hpp"
 #include "state_estimation/TopicStateEstimator.hpp"
 

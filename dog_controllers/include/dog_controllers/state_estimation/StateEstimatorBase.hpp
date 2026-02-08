@@ -40,7 +40,8 @@ namespace dog_controllers
                            const ImuData *imuPtr_,
                            PinocchioInterface pinocchioInterface,
                            CentroidalModelInfo info,
-                           const PinocchioEndEffectorKinematics &eeKinematics, rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
+                           const PinocchioEndEffectorKinematics &eeKinematics,
+                           rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
         virtual ~StateEstimatorBase() = default;
 
         virtual const vector_t &estimate() = 0;
@@ -56,7 +57,8 @@ namespace dog_controllers
 
         rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
 
-        void updateGenericResults();
+        void updateGenericResults(const double &qw, const double &qx, const double &qy, const double &qz,
+                                  const double &ang_vel_x, const double &ang_vel_y, const double &ang_vel_z);
 
         template <typename SCALAR_T>
         inline Eigen::Matrix<SCALAR_T, 3, 1> quatToZyx(const Eigen::Quaternion<SCALAR_T> &q)

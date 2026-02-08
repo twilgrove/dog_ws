@@ -37,7 +37,7 @@ namespace dog_controllers
 
         dog_interface_ = std::make_unique<DogInterface>(taskFile, urdfFile, referenceFile);
 
-        state_estimator_ = std::make_unique<TopicEstimator>(
+        state_estimator_ = std::make_unique<KalmanFilterEstimator>(
             bridge_->legs.data(), &(bridge_->imu),
             dog_interface_->getPinocchioInterface(),
             dog_interface_->getCentroidalModelInfo(),
@@ -78,6 +78,7 @@ namespace dog_controllers
         debug_manager_->publish();
 
         bridge_->write_to_hw();
+
         return controller_interface::return_type::OK;
     }
 }
