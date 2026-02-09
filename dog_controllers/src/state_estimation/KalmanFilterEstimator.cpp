@@ -95,28 +95,32 @@ namespace dog_controllers
 
     void KalmanFilterEstimator::updateKinematics()
     {
-        updateGenericResults(
-            imuPtr_->ori[3], imuPtr_->ori[0], imuPtr_->ori[1], imuPtr_->ori[2],
-            imuPtr_->ang_vel[0], imuPtr_->ang_vel[1], imuPtr_->ang_vel[2]);
+        updateGenericResults(imuPtr_->ori[3], imuPtr_->ori[0], imuPtr_->ori[1], imuPtr_->ori[2]);
+        const vector3_t zyx = results.rbdState_36.head<3>();
+        results.rbdState_36.segment<3>(18) = getGlobalAngularVelocityFromEulerAnglesZyxDerivatives<scalar_t>(
+            zyx, getEulerAnglesZyxDerivativesFromLocalAngularVelocity<scalar_t>(
+                     zyx,
+                     Eigen::Map<const vector3_t>(imuPtr_->ang_vel)));
 
         const auto &model = pinocchioInterface_.getModel();
         auto &data = pinocchioInterface_.getData();
-        size_t actuatedDofNum = centroidalModelInfo_.actuatedDofNum;
-        size_t generalizedCoordinatesNum = centroidalModelInfo_.generalizedCoordinatesNum;
 
         // 构建 Pinocchio 状态向量 (位置设为0，防止自相关误差)
-        vector_t qPino = vector_t::Zero(generalizedCoordinatesNum);
-        vector_t vPino = vector_t::Zero(generalizedCoordinatesNum);
+        vector_t qPino = vector_t::Zero(18);
+        vector_t vPino = vector_t::Zero(18);
 
         // 获取欧拉角姿态
         qPino.segment<3>(3) = results.rbdState_36.head<3>();
-        qPino.tail(actuatedDofNum) = results.rbdState_36.segment(6, actuatedDofNum);
+        // 获取关节位置
+        qPino.tail(12) = results.rbdState_36.segment(6, 12);
 
         // 角速度转换: Global Angular Velocity -> Euler Zyx Derivatives
         vPino.segment<3>(3) = getEulerAnglesZyxDerivativesFromGlobalAngularVelocity<scalar_t>(
             qPino.segment<3>(3),
-            results.rbdState_36.segment<3>(generalizedCoordinatesNum));
-        vPino.tail(actuatedDofNum) = results.rbdState_36.segment(6 + generalizedCoordinatesNum, actuatedDofNum);
+            results.rbdState_36.segment<3>(18));
+
+        // 获取关节速度
+        vPino.tail(12) = results.rbdState_36.segment(6 + 18, 12);
 
         // 正运动学更新
         pinocchio::forwardKinematics(model, data, qPino, vPino);

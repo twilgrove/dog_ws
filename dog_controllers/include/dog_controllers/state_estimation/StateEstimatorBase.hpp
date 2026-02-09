@@ -51,27 +51,26 @@ namespace dog_controllers
         const LegData *legsPtr_ = nullptr;
         const ImuData *imuPtr_ = nullptr;
 
+        vector3_t zyxOffset_ = vector3_t::Zero(); // 欧拉角偏移量（用于校准）
+
         PinocchioInterface pinocchioInterface_;
         CentroidalModelInfo centroidalModelInfo_;
         std::unique_ptr<PinocchioEndEffectorKinematics> eeKinematics_;
 
         rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
 
-        void updateGenericResults(const double &qw, const double &qx, const double &qy, const double &qz,
-                                  const double &ang_vel_x, const double &ang_vel_y, const double &ang_vel_z);
+        void updateGenericResults(const double &qw, const double &qx, const double &qy, const double &qz);
 
-        template <typename SCALAR_T>
-        inline Eigen::Matrix<SCALAR_T, 3, 1> quatToZyx(const Eigen::Quaternion<SCALAR_T> &q)
+        inline vector3_t quatToZyx(const Eigen::Quaternion<scalar_t> &q)
         {
-            using vector3_t = Eigen::Matrix<SCALAR_T, 3, 1>;
             vector3_t zyx;
 
-            const SCALAR_T w = q.w();
-            const SCALAR_T x = q.x();
-            const SCALAR_T y = q.y();
-            const SCALAR_T z = q.z();
+            const scalar_t w = q.w();
+            const scalar_t x = q.x();
+            const scalar_t y = q.y();
+            const scalar_t z = q.z();
 
-            SCALAR_T sinP = -2.0 * (x * z - w * y);
+            scalar_t sinP = -2.0 * (x * z - w * y);
 
             if (std::abs(sinP) >= 1.0)
             {

@@ -19,33 +19,19 @@ namespace dog_controllers
         results.contactFlags_MPC = 15;
     }
 
-    void StateEstimatorBase::updateGenericResults(const double &qw, const double &qx, const double &qy, const double &qz,
-                                                  const double &ang_vel_x, const double &ang_vel_y, const double &ang_vel_z)
+    void StateEstimatorBase::updateGenericResults(const double &qw, const double &qx, const double &qy, const double &qz)
     {
         const quaternion_t quat(qw, qx, qy, qz);
-
-        results.rbdState_36.head<3>() = quatToZyx(quat);
-
-        results.rbdState_36.segment<3>(18) << ang_vel_x, ang_vel_y, ang_vel_z;
+        results.rbdState_36.head<3>() = quatToZyx(quat) - zyxOffset_;
 
         for (int i = 0; i < 4; ++i)
         {
             const auto &leg = legsPtr_[i];
-            const int idx = 6 + i * 3;
-            results.rbdState_36(idx) = leg.hip.pos;
-            results.rbdState_36(idx + 1) = leg.thigh.pos;
-            results.rbdState_36(idx + 2) = leg.calf.pos;
-
-            const int v_idx = 24 + i * 3;
-            results.rbdState_36(v_idx) = leg.hip.vel;
-            results.rbdState_36(v_idx + 1) = leg.thigh.vel;
-            results.rbdState_36(v_idx + 2) = leg.calf.vel;
-        }
-
-        for (int i = 0; i < 4; ++i)
-        {
+            results.rbdState_36.segment<3>(6 + i * 3) << leg.hip.pos, leg.thigh.pos, leg.calf.pos;
+            results.rbdState_36.segment<3>(24 + i * 3) << leg.hip.vel, leg.thigh.vel, leg.calf.vel;
             results.contactFlags_WBC[i] = (legsPtr_[i].contact > 0.5f);
         }
+
         results.contactFlags_MPC = (static_cast<size_t>(results.contactFlags_WBC[0]) << 3) |
                                    (static_cast<size_t>(results.contactFlags_WBC[1]) << 2) |
                                    (static_cast<size_t>(results.contactFlags_WBC[2]) << 1) |
