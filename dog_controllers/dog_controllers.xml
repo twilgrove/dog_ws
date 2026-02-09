@@ -3,7 +3,17 @@
          type="dog_controllers::DogNmpcWbcController"
          base_class_type="controller_interface::ControllerInterface">
     <description>
-      四足机器人测试控制器：用于验证 12 关节、IMU 和触地传感器的底层地址映射及数据反馈。
+      基础足式机器人控制器
+    </description>
+  </class>
+</library>
+
+<library path="dog_nmpc_wbc_controller">
+  <class name="dog_controllers/DogNmpcWbcController_God"
+         type="dog_controllers::DogNmpcWbcController_God"
+         base_class_type="controller_interface::ControllerInterface">
+    <description>
+      基础足式机器人控制器（上帝模式）
     </description>
   </class>
 </library>

@@ -16,7 +16,7 @@ namespace dog_controllers
 {
     using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
-    class DogNmpcWbcController final : public controller_interface::ControllerInterface
+    class DogNmpcWbcController : public controller_interface::ControllerInterface
     {
     public:
         DogNmpcWbcController() = default;
@@ -29,7 +29,7 @@ namespace dog_controllers
         CallbackReturn on_activate(const rclcpp_lifecycle::State &previous_state) override;
         controller_interface::return_type update(const rclcpp::Time &time, const rclcpp::Duration &period) override;
 
-    private:
+    protected:
         std::unique_ptr<DogDataBridge> bridge_;
         std::unique_ptr<DebugManager> debug_manager_;
         std::unique_ptr<DogInterface> dog_interface_;
@@ -39,5 +39,9 @@ namespace dog_controllers
         std::string urdfFile;
         std::string taskFile;
         std::string referenceFile;
+    };
+    class DogNmpcWbcController_God : public DogNmpcWbcController
+    {
+        CallbackReturn on_activate(const rclcpp_lifecycle::State &previous_state) override;
     };
 }

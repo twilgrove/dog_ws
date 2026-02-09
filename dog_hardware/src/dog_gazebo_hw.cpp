@@ -18,16 +18,20 @@ namespace dog_hardware
         sdf::ElementPtr /*sdf*/)
     {
         this->node_ = node;
+        RCLCPP_INFO(node_->get_logger(), "\033[1;36m====================================================\033[0m");
+        RCLCPP_INFO(node_->get_logger(), "\033[1;36m[ 初始化开始 ] 🚀 DogGazeboHW\033[0m");
         // 提取参数
         delay_ = std::stod(hardware_info.hardware_parameters.at("delay"));
         double a_var = std::stod(hardware_info.hardware_parameters.at("imu_accel_var"));
         double g_var = std::stod(hardware_info.hardware_parameters.at("imu_gyro_var"));
         double o_var = std::stod(hardware_info.hardware_parameters.at("imu_ori_var"));
-        RCLCPP_INFO(node_->get_logger(), "dog 硬件插件参数：命令延迟 = %.3f 秒", delay_);
-        RCLCPP_INFO(node_->get_logger(), "IMU 加速度协方差 = %.6f，角速度协方差 = %.6f，姿态协方差 = %.6f", a_var, g_var, o_var);
+        RCLCPP_INFO(node_->get_logger(), "\033[1;33m📊 [PARAM] 已加载配置清单:\033[0m");
+        RCLCPP_INFO(node_->get_logger(), "\033[1;33m  ├─ 命令延迟      : \033[0m%.3f 秒", delay_);
+        RCLCPP_INFO(node_->get_logger(), "\033[1;33m  ├─ 加速度协方差  : \033[0m%.6f", a_var);
+        RCLCPP_INFO(node_->get_logger(), "\033[1;33m  ├─ 角速度协方差  : \033[0m%.6f", g_var);
+        RCLCPP_INFO(node_->get_logger(), "\033[1;33m  └─ 姿态协方差    : \033[0m%.6f", o_var);
 
         // --- 初始化关节 ---
-        RCLCPP_INFO(node_->get_logger(), "正在绑定 dog 硬件插件中的关节指针...");
         for (const auto &joint_info : hardware_info.joints)
         {
             JointData jd;
@@ -56,18 +60,16 @@ namespace dog_hardware
             jd.pos = initial_pos;
             jd.cmd.pos_des = initial_pos;
 
-            RCLCPP_INFO(node_->get_logger(), "已设置关节 %s 初始位置: %.2f", jd.name.c_str(), initial_pos);
-
             joints_.push_back(jd);
         }
-        RCLCPP_INFO(node_->get_logger(), "成功绑定了 %ld 个关节指针", joints_.size());
+
+        RCLCPP_INFO(node_->get_logger(), "\033[1;32m[配置成功] 🔗 关节映射完成，共绑定 %zu 关节指针\033[0m",
+                    joints_.size());
 
         // --- 初始化传感器 ---
-        RCLCPP_INFO(node_->get_logger(), "正在绑定 dog 硬件插件中的传感器指针...");
 
         for (const auto &sensor : hardware_info.sensors)
         {
-            RCLCPP_INFO(node_->get_logger(), "正在绑定传感器: %s", sensor.name.c_str());
             // 触地传感器
             if (sensor.name.find("contact") != std::string::npos)
             {
@@ -101,7 +103,8 @@ namespace dog_hardware
         }
         else
         {
-            RCLCPP_INFO(node_->get_logger(), "成功绑定了 %ld 个触地传感器指针", contact_sensors_.size());
+            RCLCPP_INFO(node_->get_logger(), "\033[1;32m[配置成功] 🔗 触地传感器映射完成，共绑定 %zu 个传感器指针\033[0m",
+                        contact_sensors_.size());
         }
 
         if (!imu_data_.gazebo_sensor)
@@ -111,9 +114,10 @@ namespace dog_hardware
         }
         else
         {
-            RCLCPP_INFO(node_->get_logger(), "成功绑定了 IMU 传感器指针");
+            RCLCPP_INFO(node_->get_logger(), "\033[1;32m[配置成功] 🔗 成功绑定了 IMU 传感器指针\033[0m");
         }
-
+        RCLCPP_INFO(node_->get_logger(), "\033[1;32m[ 初始化完成 ] ✅ DogGazeboHW\033[0m");
+        RCLCPP_INFO(node_->get_logger(), "\033[1;32m====================================================\033[0m");
         return true;
     }
 

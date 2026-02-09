@@ -1,8 +1,8 @@
 #include "common/dog_interface.hpp"
 #include <iostream>
 #include <string>
-
-#include <pinocchio/fwd.hpp> // forward declarations must be included first.
+#include <rclcpp/rclcpp.hpp>
+#include <pinocchio/fwd.hpp>
 
 #include <pinocchio/algorithm/frames.hpp>
 #include <pinocchio/algorithm/jacobian.hpp>
@@ -29,8 +29,12 @@
 namespace dog_controllers
 {
 
-    DogInterface::DogInterface(const std::string &taskFile, const std::string &urdfFile, const std::string &referenceFile)
+    DogInterface::DogInterface(const std::string &taskFile,
+                               const std::string &urdfFile,
+                               const std::string &referenceFile)
     {
+        RCLCPP_INFO(rclcpp::get_logger("DogNmpcWbcController"), "\033[1;36m====================================================\033[0m");
+        RCLCPP_INFO(rclcpp::get_logger("DogNmpcWbcController"), "\033[1;36m[ 初始化开始 ] 🚀 DogInterface\033[0m");
         bool verbose = false;
         ocs2::loadData::loadCppDataType(taskFile, "legged_robot_interface.verbose", verbose);
 
@@ -58,6 +62,9 @@ namespace dog_controllers
             *pinocchioInterfacePtr_,
             ocs2::CentroidalModelPinocchioMapping(centroidalModelInfo_),
             modelSettings_.contactNames3DoF);
+
+        RCLCPP_INFO(rclcpp::get_logger("DogNmpcWbcController"), "\033[1;32m[ 初始化完成 ] ✅ DogInterface\033[0m");
+        RCLCPP_INFO(rclcpp::get_logger("DogNmpcWbcController"), "\033[1;32m====================================================\033[0m");
     }
 
 } // namespace dog_controllers

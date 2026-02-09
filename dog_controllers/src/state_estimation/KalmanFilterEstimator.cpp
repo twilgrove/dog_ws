@@ -2,17 +2,45 @@
 #include <ocs2_robotic_tools/common/RotationDerivativesTransforms.h>
 #include <pinocchio/algorithm/frames.hpp>
 #include <pinocchio/algorithm/kinematics.hpp>
-
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/info_parser.hpp>
+#include <ocs2_core/misc/LoadData.h>
 namespace dog_controllers
 {
-
     KalmanFilterEstimator::KalmanFilterEstimator(const LegData *legsPtr, const ImuData *imuPtr,
+                                                 const std::string &taskFile,
                                                  PinocchioInterface pinocchioInterface,
                                                  CentroidalModelInfo info,
                                                  const PinocchioEndEffectorKinematics &eeKinematics,
                                                  rclcpp_lifecycle::LifecycleNode::SharedPtr &node)
         : StateEstimatorBase(legsPtr, imuPtr, std::move(pinocchioInterface), std::move(info), eeKinematics, node)
     {
+
+        RCLCPP_INFO(node_->get_logger(), "\033[1;36m====================================================\033[0m");
+        RCLCPP_INFO(node_->get_logger(), "\033[1;36m[ 初始化开始 ] 🚀 KalmanFilterEstimator\033[0m");
+
+        boost::property_tree::ptree pt;
+        boost::property_tree::read_info(taskFile, pt);
+        std::string prefix = "kalmanFilter.";
+
+        bool verbose = false;
+        loadData::loadPtreeValue(pt, accelFilterAlpha_, prefix + "accelFilterAlpha", verbose);
+        loadData::loadPtreeValue(pt, footRadius_, prefix + "footRadius", verbose);
+        loadData::loadPtreeValue(pt, imuProcessNoisePosition_, prefix + "imuProcessNoisePosition", verbose);
+        loadData::loadPtreeValue(pt, imuProcessNoiseVelocity_, prefix + "imuProcessNoiseVelocity", verbose);
+        loadData::loadPtreeValue(pt, footProcessNoisePosition_, prefix + "footProcessNoisePosition", verbose);
+        loadData::loadPtreeValue(pt, footSensorNoisePosition_, prefix + "footSensorNoisePosition", verbose);
+        loadData::loadPtreeValue(pt, footSensorNoiseVelocity_, prefix + "footSensorNoiseVelocity", verbose);
+        loadData::loadPtreeValue(pt, footHeightSensorNoise_, prefix + "footHeightSensorNoise", verbose);
+        RCLCPP_INFO(node_->get_logger(), "\033[1;33m📊 [PARAM] 已加载配置清单:\033[0m");
+        RCLCPP_INFO(node_->get_logger(), "\033[1;33m  ├─ 加速度计滤波系数 (Alpha) : \033[0m%.3f", accelFilterAlpha_);
+        RCLCPP_INFO(node_->get_logger(), "\033[1;33m  ├─ 足端碰撞球半径 (Radius)  : \033[0m%.3f", footRadius_);
+        RCLCPP_INFO(node_->get_logger(), "\033[1;33m  ├─ IMU 位置过程噪声        : \033[0m%.3f", imuProcessNoisePosition_);
+        RCLCPP_INFO(node_->get_logger(), "\033[1;33m  ├─ IMU 速度过程噪声        : \033[0m%.3f", imuProcessNoiseVelocity_);
+        RCLCPP_INFO(node_->get_logger(), "\033[1;33m  ├─ 足端位置过程噪声        : \033[0m%.3f", footProcessNoisePosition_);
+        RCLCPP_INFO(node_->get_logger(), "\033[1;33m  ├─ 足端位置观测噪声        : \033[0m%.3f", footSensorNoisePosition_);
+        RCLCPP_INFO(node_->get_logger(), "\033[1;33m  ├─ 足端速度观测噪声        : \033[0m%.3f", footSensorNoiseVelocity_);
+        RCLCPP_INFO(node_->get_logger(), "\033[1;33m  └─ 足端高度观测噪声        : \033[0m%.3f", footHeightSensorNoise_);
 
         // 1. 初始化矩阵 A, B
         xHat_.setZero(numState_);
@@ -45,6 +73,9 @@ namespace dog_controllers
         eeKinematics_->setPinocchioInterface(pinocchioInterface_);
 
         lastTime_ = node_->now();
+
+        RCLCPP_INFO(node_->get_logger(), "\033[1;32m[ 初始化完成 ] ✅ KalmanFilterEstimator\033[0m");
+        RCLCPP_INFO(node_->get_logger(), "\033[1;32m====================================================\033[0m");
     }
 
     const vector_t &KalmanFilterEstimator::estimate()

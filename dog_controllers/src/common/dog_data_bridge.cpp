@@ -7,9 +7,17 @@ namespace dog_controllers
         std::vector<hardware_interface::LoanedCommandInterface> &command_interfaces,
         rclcpp_lifecycle::LifecycleNode::SharedPtr &node) : node_(node)
     {
+        RCLCPP_INFO(node_->get_logger(), "\033[1;36m====================================================\033[0m");
+        RCLCPP_INFO(node_->get_logger(), "\033[1;36m[ 初始化开始 ] 🚀 DogDataBridge\033[0m");
+
         joint_names_ = node_->get_parameter("joints").as_string_array();
         contact_names_ = node_->get_parameter("contacts").as_string_array();
         imu_name_ = "imu_sensor";
+
+        RCLCPP_INFO(node_->get_logger(), "\033[1;33m📊 [PARAM] 已加载配置清单:\033[0m");
+        RCLCPP_INFO(node_->get_logger(), "\033[1;33m  ├─ 关节数量: %zu\033[0m", joint_names_.size());
+        RCLCPP_INFO(node_->get_logger(), "\033[1;33m  ├─ 触地传感器: %zu\033[0m", contact_names_.size());
+        RCLCPP_INFO(node_->get_logger(), "\033[1;33m  └─ IMU 标识: %s\033[0m", imu_name_.c_str());
 
         // 1. 初始化结构
         const std::string leg_prefixes[4] = {"LF", "LH", "RF", "RH"};
@@ -107,7 +115,12 @@ namespace dog_controllers
                          "DogDataBridge 映射任务数量错误！读任务数: %zu, 写任务数: %zu",
                          read_tasks_.size(), write_tasks_.size());
         }
-        RCLCPP_INFO(node_->get_logger(), "核心类: DogDataBridge 初始化完成！");
+        else
+        {
+            RCLCPP_INFO(node_->get_logger(), "\033[1;32m[配置成功] 🔗 成功绑定%zu 条链路\033[0m", read_tasks_.size() + write_tasks_.size());
+            RCLCPP_INFO(node_->get_logger(), "\033[1;32m[ 初始化完成 ] ✅ DogDataBridge\033[0m");
+            RCLCPP_INFO(node_->get_logger(), "\033[1;32m====================================================\033[0m");
+        }
     }
 
     void DogDataBridge::read_from_hw()

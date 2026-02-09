@@ -15,6 +15,7 @@ namespace dog_controllers
             "/ground_truth", rclcpp::SensorDataQoS().keep_last(1),
             [this](const nav_msgs::msg::Odometry::SharedPtr msg)
             { this->odomCallback(msg); });
+        RCLCPP_INFO(node_->get_logger(), "\033[1;32m[ 初始化完成 ] ✅ TopicEstimator\033[0m");
     }
 
     void TopicEstimator::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)

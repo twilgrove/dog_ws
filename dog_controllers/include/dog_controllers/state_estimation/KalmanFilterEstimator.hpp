@@ -8,8 +8,12 @@ namespace dog_controllers
     class KalmanFilterEstimator : public StateEstimatorBase
     {
     public:
-        KalmanFilterEstimator(const LegData *legsPtr, const ImuData *imuPtr, PinocchioInterface pinocchioInterface,
-                              CentroidalModelInfo info, const PinocchioEndEffectorKinematics &eeKinematics,
+        KalmanFilterEstimator(const LegData *legsPtr,
+                              const ImuData *imuPtr,
+                              const std::string &taskFile,
+                              PinocchioInterface pinocchioInterface,
+                              CentroidalModelInfo info,
+                              const PinocchioEndEffectorKinematics &eeKinematics,
                               rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
 
         const vector_t &estimate() override;

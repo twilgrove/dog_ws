@@ -38,7 +38,9 @@ namespace dog_controllers
         dog_interface_ = std::make_unique<DogInterface>(taskFile, urdfFile, referenceFile);
 
         state_estimator_ = std::make_unique<KalmanFilterEstimator>(
-            bridge_->legs.data(), &(bridge_->imu),
+            bridge_->legs.data(),
+            &(bridge_->imu),
+            taskFile,
             dog_interface_->getPinocchioInterface(),
             dog_interface_->getCentroidalModelInfo(),
             dog_interface_->getEndEffectorKinematics(), node_);
@@ -48,11 +50,26 @@ namespace dog_controllers
             &(state_estimator_->results),
             node_);
 
-        if (!bridge_ || !dog_interface_ || !state_estimator_ || !debug_manager_)
-        {
-            RCLCPP_ERROR(node_->get_logger(), "核心类初始化错误！！");
-            return CallbackReturn::ERROR;
-        }
+        return CallbackReturn::SUCCESS;
+    }
+
+    CallbackReturn DogNmpcWbcController_God::on_activate(const rclcpp_lifecycle::State &)
+    {
+        bridge_ = std::make_unique<DogDataBridge>(state_interfaces_, command_interfaces_, node_);
+
+        dog_interface_ = std::make_unique<DogInterface>(taskFile, urdfFile, referenceFile);
+
+        state_estimator_ = std::make_unique<TopicEstimator>(
+            bridge_->legs.data(),
+            &(bridge_->imu),
+            dog_interface_->getPinocchioInterface(),
+            dog_interface_->getCentroidalModelInfo(),
+            dog_interface_->getEndEffectorKinematics(), node_);
+
+        debug_manager_ = std::make_unique<DebugManager>(
+            &(bridge_->imu),
+            &(state_estimator_->results),
+            node_);
 
         return CallbackReturn::SUCCESS;
     }
@@ -61,27 +78,24 @@ namespace dog_controllers
     {
         bridge_->read_from_hw();
 
-        // for (int i = 0; i < 4; ++i)
-        // {
-        //     for (int j = 0; j < 3; ++j)
-        //     {
-        //         bridge_->legs[i].joints[j]->cmd_pos = 0.0;
-        //         bridge_->legs[i].joints[j]->cmd_kp = 40.0;
-        //         bridge_->legs[i].joints[j]->cmd_kd = 2.0;
-        //         bridge_->legs[i].joints[j]->cmd_ff = 0.0;
-        //         bridge_->legs[i].joints[j]->cmd_vel = 0.0;
-        //     }
-        // }
-
+        for (int i = 0; i < 4; ++i)
+        {
+            for (int j = 0; j < 3; ++j)
+            {
+                bridge_->legs[i].joints[j]->cmd_pos = 0.0;
+                bridge_->legs[i].joints[j]->cmd_kp = 40.0;
+                bridge_->legs[i].joints[j]->cmd_kd = 2.0;
+                bridge_->legs[i].joints[j]->cmd_ff = 0.0;
+                bridge_->legs[i].joints[j]->cmd_vel = 0.0;
+            }
+        }
         state_estimator_->estimate();
-
-        debug_manager_->publish();
-
         bridge_->write_to_hw();
-
+        debug_manager_->publish();
         return controller_interface::return_type::OK;
     }
 }
 
 #include "pluginlib/class_list_macros.hpp"
 PLUGINLIB_EXPORT_CLASS(dog_controllers::DogNmpcWbcController, controller_interface::ControllerInterface)
+PLUGINLIB_EXPORT_CLASS(dog_controllers::DogNmpcWbcController_God, controller_interface::ControllerInterface)
