@@ -12,7 +12,6 @@ namespace dog_controllers
         TopicEstimator(const LegData *legsPtr_,
                        const ImuData *imuPtr_,
                        PinocchioInterface pinocchioInterface,
-                       CentroidalModelInfo info,
                        const PinocchioEndEffectorKinematics &eeKinematics,
                        rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
 

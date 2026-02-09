@@ -12,7 +12,6 @@ namespace dog_controllers
                               const ImuData *imuPtr,
                               const std::string &taskFile,
                               PinocchioInterface pinocchioInterface,
-                              CentroidalModelInfo info,
                               const PinocchioEndEffectorKinematics &eeKinematics,
                               rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
 

@@ -6,10 +6,9 @@ namespace dog_controllers
     TopicEstimator::TopicEstimator(const LegData *legsPtr_,
                                    const ImuData *imuPtr_,
                                    PinocchioInterface pinocchioInterface,
-                                   CentroidalModelInfo info,
                                    const PinocchioEndEffectorKinematics &eeKinematics,
                                    rclcpp_lifecycle::LifecycleNode::SharedPtr &node)
-        : StateEstimatorBase(legsPtr_, imuPtr_, std::move(pinocchioInterface), std::move(info), eeKinematics, node)
+        : StateEstimatorBase(legsPtr_, imuPtr_, std::move(pinocchioInterface), eeKinematics, node)
     {
         sub_ = node->create_subscription<nav_msgs::msg::Odometry>(
             "/ground_truth", rclcpp::SensorDataQoS().keep_last(1),

@@ -6,15 +6,14 @@ namespace dog_controllers
     StateEstimatorBase::StateEstimatorBase(const LegData *legsPtr_,
                                            const ImuData *imuPtr_,
                                            PinocchioInterface pinocchioInterface,
-                                           CentroidalModelInfo info,
                                            const PinocchioEndEffectorKinematics &eeKinematics,
                                            rclcpp_lifecycle::LifecycleNode::SharedPtr &node)
         : legsPtr_(legsPtr_),
           imuPtr_(imuPtr_),
           pinocchioInterface_(std::move(pinocchioInterface)),
-          centroidalModelInfo_(std::move(info)), eeKinematics_(eeKinematics.clone()), node_(node)
+          eeKinematics_(eeKinematics.clone()), node_(node)
     {
-        results.rbdState_36 = vector_t::Zero(2 * centroidalModelInfo_.generalizedCoordinatesNum);
+        results.rbdState_36 = vector_t::Zero(36);
         results.contactFlags_WBC.fill(true);
         results.contactFlags_MPC = 15;
     }

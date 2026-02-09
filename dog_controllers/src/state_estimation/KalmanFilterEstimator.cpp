@@ -10,10 +10,9 @@ namespace dog_controllers
     KalmanFilterEstimator::KalmanFilterEstimator(const LegData *legsPtr, const ImuData *imuPtr,
                                                  const std::string &taskFile,
                                                  PinocchioInterface pinocchioInterface,
-                                                 CentroidalModelInfo info,
                                                  const PinocchioEndEffectorKinematics &eeKinematics,
                                                  rclcpp_lifecycle::LifecycleNode::SharedPtr &node)
-        : StateEstimatorBase(legsPtr, imuPtr, std::move(pinocchioInterface), std::move(info), eeKinematics, node)
+        : StateEstimatorBase(legsPtr, imuPtr, std::move(pinocchioInterface), eeKinematics, node)
     {
 
         RCLCPP_INFO(node_->get_logger(), "\033[1;36m====================================================\033[0m");
@@ -102,10 +101,7 @@ namespace dog_controllers
                      zyx,
                      Eigen::Map<const vector3_t>(imuPtr_->ang_vel)));
 
-        const auto &model = pinocchioInterface_.getModel();
-        auto &data = pinocchioInterface_.getData();
-
-        // 构建 Pinocchio 状态向量 (位置设为0，防止自相关误差)
+                // 构建 Pinocchio 状态向量 (位置设为0，防止自相关误差)
         vector_t qPino = vector_t::Zero(18);
         vector_t vPino = vector_t::Zero(18);
 
@@ -114,7 +110,7 @@ namespace dog_controllers
         // 获取关节位置
         qPino.tail(12) = results.rbdState_36.segment(6, 12);
 
-        // 角速度转换: Global Angular Velocity -> Euler Zyx Derivatives
+        // 获取角速度变化率
         vPino.segment<3>(3) = getEulerAnglesZyxDerivativesFromGlobalAngularVelocity<scalar_t>(
             qPino.segment<3>(3),
             results.rbdState_36.segment<3>(18));
@@ -123,6 +119,8 @@ namespace dog_controllers
         vPino.tail(12) = results.rbdState_36.segment(6 + 18, 12);
 
         // 正运动学更新
+        const auto &model = pinocchioInterface_.getModel();
+        auto &data = pinocchioInterface_.getData();
         pinocchio::forwardKinematics(model, data, qPino, vPino);
         pinocchio::updateFramePlacements(model, data);
 

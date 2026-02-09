@@ -42,7 +42,6 @@ namespace dog_controllers
             &(bridge_->imu),
             taskFile,
             dog_interface_->getPinocchioInterface(),
-            dog_interface_->getCentroidalModelInfo(),
             dog_interface_->getEndEffectorKinematics(), node_);
 
         debug_manager_ = std::make_unique<DebugManager>(
@@ -63,7 +62,6 @@ namespace dog_controllers
             bridge_->legs.data(),
             &(bridge_->imu),
             dog_interface_->getPinocchioInterface(),
-            dog_interface_->getCentroidalModelInfo(),
             dog_interface_->getEndEffectorKinematics(), node_);
 
         debug_manager_ = std::make_unique<DebugManager>(
@@ -78,17 +76,17 @@ namespace dog_controllers
     {
         bridge_->read_from_hw();
 
-        for (int i = 0; i < 4; ++i)
-        {
-            for (int j = 0; j < 3; ++j)
-            {
-                bridge_->legs[i].joints[j]->cmd_pos = 0.0;
-                bridge_->legs[i].joints[j]->cmd_kp = 40.0;
-                bridge_->legs[i].joints[j]->cmd_kd = 2.0;
-                bridge_->legs[i].joints[j]->cmd_ff = 0.0;
-                bridge_->legs[i].joints[j]->cmd_vel = 0.0;
-            }
-        }
+        // for (int i = 0; i < 4; ++i)
+        // {
+        //     for (int j = 0; j < 3; ++j)
+        //     {
+        //         bridge_->legs[i].joints[j]->cmd_pos = 0.0;
+        //         bridge_->legs[i].joints[j]->cmd_kp = 40.0;
+        //         bridge_->legs[i].joints[j]->cmd_kd = 2.0;
+        //         bridge_->legs[i].joints[j]->cmd_ff = 0.0;
+        //         bridge_->legs[i].joints[j]->cmd_vel = 0.0;
+        //     }
+        // }
         state_estimator_->estimate();
         bridge_->write_to_hw();
         debug_manager_->publish();

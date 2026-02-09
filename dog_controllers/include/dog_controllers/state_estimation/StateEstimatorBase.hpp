@@ -18,7 +18,6 @@ namespace dog_controllers
 
     struct EstimatorResults
     {
-        double time = 0.0; // 时间戳
         /**
          * 36维全状态向量 (rbdState_36) 索引定义：
          * 0-2  : 基座姿态 - 欧拉角 (Euler Angles: Roll, Pitch, Yaw)
@@ -39,7 +38,6 @@ namespace dog_controllers
         StateEstimatorBase(const LegData *legsPtr_,
                            const ImuData *imuPtr_,
                            PinocchioInterface pinocchioInterface,
-                           CentroidalModelInfo info,
                            const PinocchioEndEffectorKinematics &eeKinematics,
                            rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
         virtual ~StateEstimatorBase() = default;
@@ -54,7 +52,6 @@ namespace dog_controllers
         vector3_t zyxOffset_ = vector3_t::Zero(); // 欧拉角偏移量（用于校准）
 
         PinocchioInterface pinocchioInterface_;
-        CentroidalModelInfo centroidalModelInfo_;
         std::unique_ptr<PinocchioEndEffectorKinematics> eeKinematics_;
 
         rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
