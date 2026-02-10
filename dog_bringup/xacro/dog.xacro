@@ -32,24 +32,29 @@
 
     <link name="imu_link">
         <inertial>
-            <mass value="0.001"/>
+            <mass value="0.1"/>
             <origin xyz="0 0 0" rpy="0 0 0"/>
-            <inertia ixx="1e-09" ixy="0.0" ixz="0.0" iyy="1e-09" iyz="0.0" izz="1e-09"/>
+            <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
         </inertial>
     </link>
+    
 
     <joint name="imu_joint" type="fixed">
         <parent link="TORSO"/>
         <child link="imu_link"/>
         <origin xyz="0 0 0" rpy="0 0 0"/>
     </joint>
-
+    <gazebo reference="imu_joint">
+            <preserveFixedJoint>true</preserveFixedJoint>
+    </gazebo>
+    
     <link name="base_link"/>
     <joint name="base_joint" type="fixed">
         <parent link="base_link"/>
         <child link="TORSO"/>
         <origin xyz="0 0 0" rpy="0 0 0"/>
     </joint>
+
 
     <xacro:dog_leg name="LF" mirror="1" f_b="1"/>
     <xacro:dog_leg name="LH" mirror="1" f_b="-1"/>

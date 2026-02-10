@@ -19,6 +19,7 @@ def generate_launch_description():
     xacro_file = os.path.join(pkg, "xacro", "dog.xacro")
     urdf_output_dir = os.path.join(pkg, "config", "description")
     urdf_output_file = os.path.join(urdf_output_dir, "dog.urdf")
+    world_file = os.path.join(pkg, "config", "dog.world")
 
     generate_urdf = ExecuteProcess(
         cmd=[
@@ -37,6 +38,7 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(
             os.path.join(gazebo_pkg, "launch", "gazebo.launch.py")
         ),
+        launch_arguments=[("world", world_file), ("verbose", "true")],
     )
 
     robot_state_publisher = Node(
@@ -67,6 +69,8 @@ def generate_launch_description():
             "0",
             "-z",
             "0.5",
+            "-timeout",
+            "300",
         ],
         output="screen",
     )
