@@ -35,20 +35,16 @@ namespace dog_controllers
     {
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-        StateEstimatorBase(const LegData *legsPtr_,
-                           const ImuData *imuPtr_,
-                           PinocchioInterface pinocchioInterface,
-                           const PinocchioEndEffectorKinematics &eeKinematics,
-                           rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
+        StateEstimatorBase(
+            const PinocchioInterface &pinocchioInterface,
+            const PinocchioEndEffectorKinematics &eeKinematics,
+            rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
         virtual ~StateEstimatorBase() = default;
 
-        virtual const vector_t &estimate() = 0;
+        virtual const vector_t &estimate(const std::array<LegData, 4> &legsPtr, const ImuData &imuData) = 0;
         EstimatorResults results;
 
     protected:
-        const LegData *legsPtr_ = nullptr;
-        const ImuData *imuPtr_ = nullptr;
-
         vector3_t zyxOffset_ = vector3_t::Zero(); // 欧拉角偏移量（用于校准）
 
         PinocchioInterface pinocchioInterface_;
@@ -56,7 +52,7 @@ namespace dog_controllers
 
         rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
 
-        void updateGenericResults(const double &qw, const double &qx, const double &qy, const double &qz);
+        void updateGenericResults(const double &qw, const double &qx, const double &qy, const double &qz, const std::array<LegData, 4> &legsPtr);
 
         inline vector3_t quatToZyx(const Eigen::Quaternion<scalar_t> &q)
         {

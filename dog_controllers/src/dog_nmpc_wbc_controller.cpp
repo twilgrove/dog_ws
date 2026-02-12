@@ -38,8 +38,6 @@ namespace dog_controllers
         dog_interface_ = std::make_unique<DogInterface>(taskFile, urdfFile, referenceFile);
 
         state_estimator_ = std::make_unique<KalmanFilterEstimator>(
-            bridge_->legs.data(),
-            &(bridge_->imu),
             taskFile,
             dog_interface_->getPinocchioInterface(),
             dog_interface_->getEndEffectorKinematics(), node_);
@@ -59,8 +57,6 @@ namespace dog_controllers
         dog_interface_ = std::make_unique<DogInterface>(taskFile, urdfFile, referenceFile);
 
         state_estimator_ = std::make_unique<TopicEstimator>(
-            bridge_->legs.data(),
-            &(bridge_->imu),
             dog_interface_->getPinocchioInterface(),
             dog_interface_->getEndEffectorKinematics(), node_);
 
@@ -87,7 +83,7 @@ namespace dog_controllers
         //         bridge_->legs[i].joints[j]->cmd_vel = 0.0;
         //     }
         // }
-        state_estimator_->estimate();
+        state_estimator_->estimate(bridge_->legs, bridge_->imu);
         bridge_->write_to_hw();
         debug_manager_->publish();
         return controller_interface::return_type::OK;

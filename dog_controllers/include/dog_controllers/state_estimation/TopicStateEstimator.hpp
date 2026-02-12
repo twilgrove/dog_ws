@@ -9,15 +9,14 @@ namespace dog_controllers
     class TopicEstimator final : public StateEstimatorBase
     {
     public:
-        TopicEstimator(const LegData *legsPtr_,
-                       const ImuData *imuPtr_,
-                       PinocchioInterface pinocchioInterface,
-                       const PinocchioEndEffectorKinematics &eeKinematics,
-                       rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
+        TopicEstimator(
+            const PinocchioInterface &pinocchioInterface,
+            const PinocchioEndEffectorKinematics &eeKinematics,
+            rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
 
         ~TopicEstimator() = default;
 
-        const vector_t &estimate() override final;
+        const vector_t &estimate(const std::array<LegData, 4> &legsPtr, const ImuData & /*imuData*/) override final;
 
     private:
         void odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg);

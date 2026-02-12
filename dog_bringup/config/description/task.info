@@ -323,7 +323,7 @@ weight
 // 状态估计（卡尔曼滤波）参数：决定了机器人“眼睛”的清晰度
 kalmanFilter
 {
-    accelFilterAlpha            0.2    // 加速度低通滤波系数：0~1 之间
+    accelFilterAlpha            0.0    // 加速度低通滤波系数：0~1 之间
     footRadius                  0.023   // 足端球头半径（用于计算足端相对于地面的高度）
     imuProcessNoisePosition     0.02   // IMU 位置估计的过程噪声（值越大，越不相信 IMU 的位置积分）
     imuProcessNoiseVelocity     0.02   // IMU 速度估计的过程噪声

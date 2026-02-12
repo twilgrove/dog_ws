@@ -3,12 +3,11 @@
 
 namespace dog_controllers
 {
-    TopicEstimator::TopicEstimator(const LegData *legsPtr_,
-                                   const ImuData *imuPtr_,
-                                   PinocchioInterface pinocchioInterface,
-                                   const PinocchioEndEffectorKinematics &eeKinematics,
-                                   rclcpp_lifecycle::LifecycleNode::SharedPtr &node)
-        : StateEstimatorBase(legsPtr_, imuPtr_, std::move(pinocchioInterface), eeKinematics, node)
+    TopicEstimator::TopicEstimator(
+        const PinocchioInterface &pinocchioInterface,
+        const PinocchioEndEffectorKinematics &eeKinematics,
+        rclcpp_lifecycle::LifecycleNode::SharedPtr &node)
+        : StateEstimatorBase(pinocchioInterface, eeKinematics, node)
     {
         sub_ = node->create_subscription<nav_msgs::msg::Odometry>(
             "/ground_truth", rclcpp::SensorDataQoS().keep_last(1),
@@ -24,7 +23,7 @@ namespace dog_controllers
         msgReceived_ = true;
     }
 
-    const vector_t &TopicEstimator::estimate()
+    const vector_t &TopicEstimator::estimate(const std::array<LegData, 4> &legsPtr, const ImuData & /*imuData*/)
     {
         if (__builtin_expect(!msgReceived_, 0))
             return results.rbdState_36;
@@ -41,7 +40,7 @@ namespace dog_controllers
         results.rbdState_36.segment<3>(21) << twist.linear.x, twist.linear.y, twist.linear.z;
         results.rbdState_36.segment<3>(3) << pose.position.x, pose.position.y, pose.position.z;
         results.rbdState_36.segment<3>(18) << twist.angular.x, twist.angular.y, twist.angular.z;
-        updateGenericResults(pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z);
+        updateGenericResults(pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z, legsPtr);
 
         return results.rbdState_36;
     }

@@ -7,12 +7,12 @@
 #include <ocs2_core/misc/LoadData.h>
 namespace dog_controllers
 {
-    KalmanFilterEstimator::KalmanFilterEstimator(const LegData *legsPtr, const ImuData *imuPtr,
-                                                 const std::string &taskFile,
-                                                 PinocchioInterface pinocchioInterface,
-                                                 const PinocchioEndEffectorKinematics &eeKinematics,
-                                                 rclcpp_lifecycle::LifecycleNode::SharedPtr &node)
-        : StateEstimatorBase(legsPtr, imuPtr, std::move(pinocchioInterface), eeKinematics, node)
+    KalmanFilterEstimator::KalmanFilterEstimator(
+        const std::string &taskFile,
+        const PinocchioInterface &pinocchioInterface,
+        const PinocchioEndEffectorKinematics &eeKinematics,
+        rclcpp_lifecycle::LifecycleNode::SharedPtr &node)
+        : StateEstimatorBase(pinocchioInterface, eeKinematics, node)
     {
 
         RCLCPP_INFO(node_->get_logger(), "\033[1;36m====================================================\033[0m");
@@ -32,8 +32,8 @@ namespace dog_controllers
         loadData::loadPtreeValue(pt, footSensorNoiseVelocity_, prefix + "footSensorNoiseVelocity", verbose);
         loadData::loadPtreeValue(pt, footHeightSensorNoise_, prefix + "footHeightSensorNoise", verbose);
         RCLCPP_INFO(node_->get_logger(), "\033[1;33m📊 [PARAM] 已加载配置清单:\033[0m");
-        RCLCPP_INFO(node_->get_logger(), "\033[1;33m  ├─ 加速度计滤波系数 (Alpha) : \033[0m%.3f", accelFilterAlpha_);
-        RCLCPP_INFO(node_->get_logger(), "\033[1;33m  ├─ 足端碰撞球半径 (Radius)  : \033[0m%.3f", footRadius_);
+        RCLCPP_INFO(node_->get_logger(), "\033[1;33m  ├─ 加速度计滤波系数        : \033[0m%.3f", accelFilterAlpha_);
+        RCLCPP_INFO(node_->get_logger(), "\033[1;33m  ├─ 足端碰撞球半径          : \033[0m%.3f", footRadius_);
         RCLCPP_INFO(node_->get_logger(), "\033[1;33m  ├─ IMU 位置过程噪声        : \033[0m%.3f", imuProcessNoisePosition_);
         RCLCPP_INFO(node_->get_logger(), "\033[1;33m  ├─ IMU 速度过程噪声        : \033[0m%.3f", imuProcessNoiseVelocity_);
         RCLCPP_INFO(node_->get_logger(), "\033[1;33m  ├─ 足端位置过程噪声        : \033[0m%.3f", footProcessNoisePosition_);
@@ -77,12 +77,12 @@ namespace dog_controllers
         RCLCPP_INFO(node_->get_logger(), "\033[1;32m====================================================\033[0m");
     }
 
-    const vector_t &KalmanFilterEstimator::estimate()
+    const vector_t &KalmanFilterEstimator::estimate(const std::array<LegData, 4> &legsPtr, const ImuData &imuData)
     {
 
-        updateKinematics();
+        updateKinematics(legsPtr, imuData);
 
-        prepareMatrices();
+        prepareMatrices(legsPtr, imuData);
 
         compute();
 
@@ -92,16 +92,16 @@ namespace dog_controllers
         return results.rbdState_36;
     }
 
-    void KalmanFilterEstimator::updateKinematics()
+    void KalmanFilterEstimator::updateKinematics(const std::array<LegData, 4> &legsPtr, const ImuData &imuData)
     {
-        updateGenericResults(imuPtr_->ori[3], imuPtr_->ori[0], imuPtr_->ori[1], imuPtr_->ori[2]);
+        updateGenericResults(imuData.ori[3], imuData.ori[0], imuData.ori[1], imuData.ori[2], legsPtr);
         const vector3_t zyx = results.rbdState_36.head<3>();
         results.rbdState_36.segment<3>(18) = getGlobalAngularVelocityFromEulerAnglesZyxDerivatives<scalar_t>(
             zyx, getEulerAnglesZyxDerivativesFromLocalAngularVelocity<scalar_t>(
                      zyx,
-                     Eigen::Map<const vector3_t>(imuPtr_->ang_vel)));
+                     Eigen::Map<const vector3_t>(imuData.ang_vel)));
 
-                // 构建 Pinocchio 状态向量 (位置设为0，防止自相关误差)
+        // 构建 Pinocchio 状态向量 (位置设为0，防止自相关误差)
         vector_t qPino = vector_t::Zero(18);
         vector_t vPino = vector_t::Zero(18);
 
@@ -116,7 +116,7 @@ namespace dog_controllers
             results.rbdState_36.segment<3>(18));
 
         // 获取关节速度
-        vPino.tail(12) = results.rbdState_36.segment(6 + 18, 12);
+        vPino.tail(12) = results.rbdState_36.segment(24, 12);
 
         // 正运动学更新
         const auto &model = pinocchioInterface_.getModel();
@@ -136,7 +136,7 @@ namespace dog_controllers
         }
     }
 
-    void KalmanFilterEstimator::prepareMatrices()
+    void KalmanFilterEstimator::prepareMatrices(const std::array<LegData, 4> &legsPtr, const ImuData &imuData)
     {
         // 获取当前时间和时间步长
         rclcpp::Time currentTime = node_->now();
@@ -153,11 +153,11 @@ namespace dog_controllers
         q_.diagonal().segment<3>(3).fill(dt * 9.81f / 20.f * imuProcessNoiseVelocity_);
 
         // 3. 更新加速度 (输入 u)
-        quaternion_t quat(imuPtr_->ori[3], imuPtr_->ori[0], imuPtr_->ori[1], imuPtr_->ori[2]);
-        vector3_t accelLocal(imuPtr_->lin_acc[0], imuPtr_->lin_acc[1], imuPtr_->lin_acc[2]);
+        quaternion_t quat(imuData.ori[3], imuData.ori[0], imuData.ori[1], imuData.ori[2]);
+        vector3_t accelLocal(imuData.lin_acc[0], imuData.lin_acc[1], imuData.lin_acc[2]);
+        accelWorld_.z() -= 9.81;
         accelWorld_ = lastaccelWorld_ * (1 - accelFilterAlpha_) + accelFilterAlpha_ * quat._transformVector(accelLocal);
         lastaccelWorld_ = accelWorld_;
-        accelWorld_.z() -= 9.81;
 
         // 4. 动态调整 Q 和 R
         const scalar_t suspect_q = 100.0;
@@ -166,7 +166,7 @@ namespace dog_controllers
         for (size_t i = 0; i < numContacts_; ++i)
         {
             // 判断触地状态
-            bool isContact = (legsPtr_[i].contact > 0.5);
+            bool isContact = (legsPtr[i].contact > 0.5);
 
             // 更新 Q
             scalar_t q_m = isContact ? 1.0 : suspect_q;

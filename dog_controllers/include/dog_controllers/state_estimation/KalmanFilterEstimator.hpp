@@ -8,27 +8,26 @@ namespace dog_controllers
     class KalmanFilterEstimator : public StateEstimatorBase
     {
     public:
-        KalmanFilterEstimator(const LegData *legsPtr,
-                              const ImuData *imuPtr,
-                              const std::string &taskFile,
-                              PinocchioInterface pinocchioInterface,
-                              const PinocchioEndEffectorKinematics &eeKinematics,
-                              rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
+        KalmanFilterEstimator(
+            const std::string &taskFile,
+            const PinocchioInterface &pinocchioInterface,
+            const PinocchioEndEffectorKinematics &eeKinematics,
+            rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
 
-        const vector_t &estimate() override;
+        const vector_t &estimate(const std::array<LegData, 4> &legsPtr, const ImuData &imuData) override;
 
         void loadSettings(const std::string &taskFile, bool verbose);
 
     private:
         // --- 核心算法模块 ---
-        void updateKinematics();
-        void prepareMatrices();
+        void updateKinematics(const std::array<LegData, 4> &legsPtr, const ImuData &imuData);
+        void prepareMatrices(const std::array<LegData, 4> &legsPtr, const ImuData &imuData);
         void compute();
-        // 维度变量：接触点数、接触总维度、状态向量维度(18)、观测向量维度(28)
-        constexpr static size_t numContacts_ = 4;
-        constexpr static size_t dimContacts_ = 12;
-        constexpr static size_t numState_ = 18;
-        constexpr static size_t numObserve_ = 28;
+
+        constexpr static size_t numContacts_ = 4;  // 接触点数：4个脚
+        constexpr static size_t dimContacts_ = 12; // 接触总维度：4个脚 * 3维 = 12
+        constexpr static size_t numState_ = 18;    // 状态向量维度：身体位置(3) + 身体速度(3) + 4个脚位置(3*4=12)
+        constexpr static size_t numObserve_ = 28;  // 观测向量维度：4个脚相对位置(3*4=12)+4个脚相对速度(3*4=12)+4个脚高度(4)
 
         // --- 卡尔曼滤波核心矩阵 ---
         matrix_t a_;  // 状态转移矩阵 (F): x_k = A * x_{k-1} + B * u
@@ -43,16 +42,16 @@ namespace dog_controllers
         vector_t xHat_;                         // 状态量: [base_pos(3), base_vel(3), foot_pos(3*n)]
         vector_t ps_, vs_, feetHeights_;        // 观测缓存
         vector3_t accelWorld_, lastaccelWorld_; // 世界系下的加速度 (从 IMU 投影并扣除重力)
-        scalar_t accelFilterAlpha_ = 0.2;       // 加速度低通滤波系数：0~1 之间
+        scalar_t accelFilterAlpha_;             // 加速度低通滤波系数：0~1 之间
 
         // --- 配置参数 ---
-        scalar_t footRadius_ = 0.02;
-        scalar_t imuProcessNoisePosition_ = 0.02;
-        scalar_t imuProcessNoiseVelocity_ = 0.02;
-        scalar_t footProcessNoisePosition_ = 0.002;
-        scalar_t footSensorNoisePosition_ = 0.005;
-        scalar_t footSensorNoiseVelocity_ = 0.1;
-        scalar_t footHeightSensorNoise_ = 0.01;
+        scalar_t footRadius_;
+        scalar_t imuProcessNoisePosition_;
+        scalar_t imuProcessNoiseVelocity_;
+        scalar_t footProcessNoisePosition_;
+        scalar_t footSensorNoisePosition_;
+        scalar_t footSensorNoiseVelocity_;
+        scalar_t footHeightSensorNoise_;
 
         // 时间管理
         rclcpp::Time lastTime_;
