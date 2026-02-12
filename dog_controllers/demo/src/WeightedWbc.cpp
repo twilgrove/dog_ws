@@ -4,95 +4,88 @@
 
 #include "legged_wbc/WeightedWbc.h"
 
-#include <qpOASES.hpp>
+#include <qpOASES.hpp> // 引入开源的二次规划求解器
 
-namespace legged {
+namespace legged
+{
 
-vector_t WeightedWbc::update(const vector_t& stateDesired, const vector_t& inputDesired, const vector_t& rbdStateMeasured, size_t mode,
-                             scalar_t period) {
-  // 调用基类更新函数，初始化WBC所需数据
-  WbcBase::update(stateDesired, inputDesired, rbdStateMeasured, mode, period);
+  /**
+   * WeightedWbc 求解主循环
+   * 这里的逻辑是将所有 Task 转化为标准 QP 形式：min 1/2*x^T*H*x + g^T*x
+   */
+  vector_t WeightedWbc::update(const vector_t &stateDesired, const vector_t &inputDesired, const vector_t &rbdStateMeasured, size_t mode,
+                               scalar_t period)
+  {
+    // 1. 首先调用基类更新基础动力学数据（J, M, nle 等）
+    WbcBase::update(stateDesired, inputDesired, rbdStateMeasured, mode, period);
 
-  // 构建约束条件
-  // 约束任务包括：浮基动力学方程、扭矩限制、摩擦锥约束、无接触运动约束
-  Task constraints = formulateConstraints();
-  // 计算总约束数量：等式约束 + 不等式约束
-  size_t numConstraints = constraints.b_.size() + constraints.f_.size();
+    // 2. 构造硬约束 (Constraints)
+    // 包含：浮基座动力学方程、力矩限制、摩擦锥、支撑腿不动
+    Task constraints = formulateConstraints();
+    size_t numConstraints = constraints.b_.size() + constraints.f_.size();
 
-  // 构建QP问题的约束矩阵和边界
-  // A矩阵：包含等式约束和不等式约束的系数矩阵
-  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> A(numConstraints, getNumDecisionVars());
-  vector_t lbA(numConstraints), ubA(numConstraints);  // clang-format off
-  // 组合等式约束和不等式约束的系数矩阵
-  A << constraints.a_,
-       constraints.d_;
+    // 准备 qpOASES 所需的矩阵格式 (RowMajor 行优先)
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> A(numConstraints, numDecisionVars_);
+    vector_t lbA(numConstraints), ubA(numConstraints);
 
-  // 设置约束下界：等式约束b_必须严格满足，不等式约束下界为负无穷
-  lbA << constraints.b_,
-         -qpOASES::INFTY * vector_t::Ones(constraints.f_.size());
-  // 设置约束上界：等式约束上界等于b_，不等式约束上界为f_
-  ubA << constraints.b_,
-         constraints.f_;  // clang-format on
+    // 将等式约束 (Ax = b) 和不等式约束 (Dx <= f) 合并到 A 矩阵中
+    A << constraints.a_,
+        constraints.d_;
 
-  // 构建加权任务作为优化目标
-  // 加权任务包括：摆动腿任务、基座加速度任务、接触力任务
-  Task weighedTask = formulateWeightedTasks(stateDesired, inputDesired, period);
-  // 构建QP问题的Hessian矩阵：A^T * A
-  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> H = weighedTask.a_.transpose() * weighedTask.a_;
-  // 构建QP问题的梯度向量：-A^T * b
-  vector_t g = -weighedTask.a_.transpose() * weighedTask.b_;
+    // 设置约束的上下限
+    // 对于等式约束 b，上下限相等 [b, b]；对于不等式约束 f，下限为负无穷 [-inf, f]
+    lbA << constraints.b_,
+        -qpOASES::INFTY * vector_t::Ones(constraints.f_.size());
+    ubA << constraints.b_,
+        constraints.f_;
 
-  // 使用qpOASES求解QP问题
-  // 创建QP问题实例，变量数为决策变量数，约束数为总约束数
-  auto qpProblem = qpOASES::QProblem(getNumDecisionVars(), numConstraints);
-  // 设置求解器选项
-  qpOASES::Options options;
-  options.setToMPC();  // 设置为MPC模式
-  options.printLevel = qpOASES::PL_LOW;  // 低输出级别
-  options.enableEqualities = qpOASES::BT_TRUE;  // 启用等式约束
-  qpProblem.setOptions(options);
-  int nWsr = 20;  // 最大工作集更新次数
+    // 3. 构造加权目标函数 (Cost)
+    // 包含：摆动腿跟踪、机身加速度、期望接触力跟踪，分别乘以对应的权重参数
+    Task weighedTask = formulateWeightedTasks(stateDesired, inputDesired, period);
 
-  // 初始化并求解QP问题
-  // 参数：Hessian矩阵、梯度向量、约束矩阵、变量边界、约束边界
-  qpProblem.init(H.data(), g.data(), A.data(), nullptr, nullptr, lbA.data(), ubA.data(), nWsr);
-  vector_t qpSol(getNumDecisionVars());
+    // 将最小二乘形式 ||Ax - b||^2 展开为标准 QP 形式
+    // H = A^T * A,  g = -A^T * b
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> H = weighedTask.a_.transpose() * weighedTask.a_;
+    vector_t g = -weighedTask.a_.transpose() * weighedTask.b_;
 
-  // 获取QP问题的最优解
-  qpProblem.getPrimalSolution(qpSol.data());
-  return qpSol;
-}
+    // 4. 调用求解器求解 (Solve)
+    auto qpProblem = qpOASES::QProblem(numDecisionVars_, numConstraints);
+    qpOASES::Options options;
+    options.setToMPC(); // 针对模型预测控制优化设置
+    options.printLevel = qpOASES::PL_LOW;
+    options.enableEqualities = qpOASES::BT_TRUE; // 开启等式约束处理
+    qpProblem.setOptions(options);
 
-// 构建约束任务：组合所有约束条件
-Task WeightedWbc::formulateConstraints() {
-  // 返回：浮基动力学方程 + 扭矩限制 + 摩擦锥约束 + 无接触运动约束
-  return formulateFloatingBaseEomTask() + formulateTorqueLimitsTask() + formulateFrictionConeTask() + formulateNoContactMotionTask();
-}
+    int nWsr = 20; // 最大迭代次数 (Working Set Recalculations)
 
-// 构建加权任务：组合所有加权优化目标
-Task WeightedWbc::formulateWeightedTasks(const vector_t& stateDesired, const vector_t& inputDesired, scalar_t period) {
-  // 返回：摆动腿任务×权重 + 基座加速度任务×权重 + 接触力任务×权重
-  return formulateSwingLegTask() * weightSwingLeg_ + formulateBaseAccelTask(stateDesired, inputDesired, period) * weightBaseAccel_ +
-         formulateContactForceTask(inputDesired) * weightContactForce_;
-}
+    // 执行 QP 初始化和求解
+    qpProblem.init(H.data(), g.data(), A.data(), nullptr, nullptr, lbA.data(), ubA.data(), nWsr);
 
-// 从配置文件加载任务权重参数
-void WeightedWbc::loadTasksSetting(const std::string& taskFile, bool verbose) {
-  // 首先加载基类的任务设置
-  WbcBase::loadTasksSetting(taskFile, verbose);
+    // 提取原始解（包含 q_acc, f, tau）
+    vector_t qpSol(numDecisionVars_);
+    qpProblem.getPrimalSolution(qpSol.data());
 
-  // 使用boost属性树读取配置文件
-  boost::property_tree::ptree pt;
-  boost::property_tree::read_info(taskFile, pt);
-  std::string prefix = "weight.";  // 权重参数前缀
-  if (verbose) {
-    std::cerr << "\n #### WBC weight:";
-    std::cerr << "\n #### =============================================================================\n";
+    return qpSol;
   }
-  // 加载各任务的权重参数
-  loadData::loadPtreeValue(pt, weightSwingLeg_, prefix + "swingLeg", verbose);
-  loadData::loadPtreeValue(pt, weightBaseAccel_, prefix + "baseAccel", verbose);
-  loadData::loadPtreeValue(pt, weightContactForce_, prefix + "contactForce", verbose);
-}
 
-}  // namespace legged
+  /**
+   * 汇总所有硬约束任务
+   * 这些约束是“必须满足”的，否则 QP 无解
+   */
+  Task WeightedWbc::formulateConstraints()
+  {
+    return formulateFloatingBaseEomTask() + formulateTorqueLimitsTask() + formulateFrictionConeTask() + formulateNoContactMotionTask();
+  }
+
+  /**
+   * 汇总并加权所有目标任务
+   * 权重（weightXXX_）决定了当多个任务冲突时，优先牺牲哪一个
+   */
+  Task WeightedWbc::formulateWeightedTasks(const vector_t &stateDesired, const vector_t &inputDesired, scalar_t period)
+  {
+    return formulateSwingLegTask() * weightSwingLeg_ +
+           formulateBaseAccelTask(stateDesired, inputDesired, period) * weightBaseAccel_ +
+           formulateContactForceTask(inputDesired) * weightContactForce_;
+  }
+
+} // namespace legged

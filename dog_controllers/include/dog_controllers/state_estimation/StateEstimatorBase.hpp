@@ -4,6 +4,7 @@
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
 #include "common/dog_data_bridge.hpp"
 #include <ocs2_core/Types.h>
+#include <ocs2_legged_robot/common/Types.h>
 #include <ocs2_pinocchio_interface/PinocchioInterface.h>
 #include <ocs2_centroidal_model/CentroidalModelInfo.h>
 #include <ocs2_pinocchio_interface/PinocchioEndEffectorKinematics.h>
@@ -12,10 +13,7 @@
 namespace dog_controllers
 {
     using namespace ocs2;
-    using quaternion_t = Eigen::Quaternion<scalar_t>;
-    using vector3_t = Eigen::Matrix<scalar_t, 3, 1>;
-    using matrix3_t = Eigen::Matrix<scalar_t, 3, 3>;
-
+    using namespace ocs2::legged_robot;
     struct EstimatorResults
     {
         /**
@@ -28,8 +26,8 @@ namespace dog_controllers
          * 24-35: 12个关节速度 (Joint Velocities)
          */
         vector_t rbdState_36;
-        std::array<bool, 4> contactFlags_WBC; // 4位布尔数组 (WBC用)
-        size_t contactFlags_MPC = 15;         // 整数索引 (MPC用)
+        contact_flag_t contactFlags_WBC; // 4位布尔数组 (WBC用)
+        size_t contactFlags_MPC = 15;    // 整数索引 (MPC用)
     };
     class StateEstimatorBase
     {
@@ -41,7 +39,7 @@ namespace dog_controllers
             rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
         virtual ~StateEstimatorBase() = default;
 
-        virtual const vector_t &estimate(const std::array<LegData, 4> &legsPtr, const ImuData &imuData) = 0;
+        virtual const vector_t &estimate(const std::array<LegData, 4> &legsPtr, const ImuData &imuData, const rclcpp::Duration &period) = 0;
         EstimatorResults results;
 
     protected:

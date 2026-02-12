@@ -23,7 +23,7 @@ namespace dog_controllers
         msgReceived_ = true;
     }
 
-    const vector_t &TopicEstimator::estimate(const std::array<LegData, 4> &legsPtr, const ImuData & /*imuData*/)
+    const vector_t &TopicEstimator::estimate(const std::array<LegData, 4> &legsPtr, const ImuData & /*imuData*/, const rclcpp::Duration & /*period*/)
     {
         if (__builtin_expect(!msgReceived_, 0))
             return results.rbdState_36;

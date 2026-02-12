@@ -16,7 +16,7 @@ namespace dog_controllers
 
         ~TopicEstimator() = default;
 
-        const vector_t &estimate(const std::array<LegData, 4> &legsPtr, const ImuData & /*imuData*/) override final;
+        const vector_t &estimate(const std::array<LegData, 4> &legsPtr, const ImuData & /*imuData*/, const rclcpp::Duration & /*&period*/) override final;
 
     private:
         void odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg);

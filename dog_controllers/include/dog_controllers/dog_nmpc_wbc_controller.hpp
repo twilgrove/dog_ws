@@ -11,6 +11,7 @@
 #include "state_estimation/KalmanFilterEstimator.hpp"
 #include "state_estimation/StateEstimatorBase.hpp"
 #include "state_estimation/TopicStateEstimator.hpp"
+#include "wbc/WbcBase.hpp"
 
 namespace dog_controllers
 {
@@ -29,11 +30,14 @@ namespace dog_controllers
         CallbackReturn on_activate(const rclcpp_lifecycle::State &previous_state) override;
         controller_interface::return_type update(const rclcpp::Time &time, const rclcpp::Duration &period) override;
 
+        virtual void init_real_or_god();
+
     protected:
         std::unique_ptr<DogDataBridge> bridge_;
         std::unique_ptr<DebugManager> debug_manager_;
         std::unique_ptr<DogInterface> dog_interface_;
         std::unique_ptr<StateEstimatorBase> state_estimator_;
+        std::unique_ptr<WbcBase> wbc_;
 
         rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
         std::string urdfFile;
@@ -42,6 +46,6 @@ namespace dog_controllers
     };
     class DogNmpcWbcController_God : public DogNmpcWbcController
     {
-        CallbackReturn on_activate(const rclcpp_lifecycle::State &previous_state) override;
+        void init_real_or_god() override;
     };
 }

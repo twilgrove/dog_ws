@@ -31,44 +31,42 @@ namespace dog_controllers
         return conf;
     }
 
+    void DogNmpcWbcController::init_real_or_god()
+    {
+        state_estimator_ = std::make_unique<KalmanFilterEstimator>(
+            taskFile,
+            dog_interface_->getPinocchioInterface(),
+            dog_interface_->getEndEffectorKinematics(), node_);
+    }
+    void DogNmpcWbcController_God::init_real_or_god()
+    {
+        state_estimator_ = std::make_unique<TopicEstimator>(
+            dog_interface_->getPinocchioInterface(),
+            dog_interface_->getEndEffectorKinematics(), node_);
+    }
+
     CallbackReturn DogNmpcWbcController::on_activate(const rclcpp_lifecycle::State &)
     {
         bridge_ = std::make_unique<DogDataBridge>(state_interfaces_, command_interfaces_, node_);
 
         dog_interface_ = std::make_unique<DogInterface>(taskFile, urdfFile, referenceFile);
 
-        state_estimator_ = std::make_unique<KalmanFilterEstimator>(
-            taskFile,
-            dog_interface_->getPinocchioInterface(),
-            dog_interface_->getEndEffectorKinematics(), node_);
+        init_real_or_god();
 
         debug_manager_ = std::make_unique<DebugManager>(
             &(bridge_->imu),
             &(state_estimator_->results),
             node_);
 
-        return CallbackReturn::SUCCESS;
-    }
-
-    CallbackReturn DogNmpcWbcController_God::on_activate(const rclcpp_lifecycle::State &)
-    {
-        bridge_ = std::make_unique<DogDataBridge>(state_interfaces_, command_interfaces_, node_);
-
-        dog_interface_ = std::make_unique<DogInterface>(taskFile, urdfFile, referenceFile);
-
-        state_estimator_ = std::make_unique<TopicEstimator>(
+        wbc_ = std::make_unique<WbcBase>(
             dog_interface_->getPinocchioInterface(),
-            dog_interface_->getEndEffectorKinematics(), node_);
-
-        debug_manager_ = std::make_unique<DebugManager>(
-            &(bridge_->imu),
-            &(state_estimator_->results),
-            node_);
+            dog_interface_->getCentroidalModelInfo(),
+            dog_interface_->getEndEffectorKinematics());
 
         return CallbackReturn::SUCCESS;
     }
 
-    controller_interface::return_type DogNmpcWbcController::update(const rclcpp::Time &, const rclcpp::Duration &)
+    controller_interface::return_type DogNmpcWbcController::update(const rclcpp::Time &time, const rclcpp::Duration &period)
     {
         bridge_->read_from_hw();
 
@@ -83,7 +81,7 @@ namespace dog_controllers
         //         bridge_->legs[i].joints[j]->cmd_vel = 0.0;
         //     }
         // }
-        state_estimator_->estimate(bridge_->legs, bridge_->imu);
+        state_estimator_->estimate(bridge_->legs, bridge_->imu, period);
         bridge_->write_to_hw();
         debug_manager_->publish();
         return controller_interface::return_type::OK;

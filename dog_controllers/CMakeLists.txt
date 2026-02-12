@@ -26,6 +26,7 @@ find_package(nav_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
+find_package(qpoases_vendor REQUIRED)
 
 find_package(ament_cmake REQUIRED)
 find_package(urdf REQUIRED)
@@ -46,7 +47,9 @@ add_library(
   src/common/dog_interface.cpp
   src/state_estimation/StateEstimatorBase.cpp
   src/state_estimation/TopicStateEstimator.cpp
-  src/state_estimation/KalmanFilterEstimator.cpp)
+  src/state_estimation/KalmanFilterEstimator.cpp
+  src/wbc/WbcBase.cpp
+  src/wbc/WeightedWbc.cpp)
 
 target_include_directories(
   dog_nmpc_wbc_controller
@@ -74,7 +77,8 @@ ament_target_dependencies(
   tf2_ros
   tf2_geometry_msgs
   urdf
-  urdfdom)
+  urdfdom
+  qpoases_vendor)
 
 pluginlib_export_plugin_description_file(controller_interface
                                          dog_controllers.xml)

@@ -15,6 +15,46 @@
 namespace dog_hardware
 {
     using CallbackReturn = hardware_interface::CallbackReturn;
+    // 定义参数混合控制结构
+    struct HybridCommand
+    {
+        double pos_des = 0.0;
+        double vel_des = 0.0;
+        double kp = 0.0;
+        double kd = 0.0;
+        double ff = 0.0;
+        rclcpp::Time stamp; // 用于计算延迟
+    };
+    // 关节数据
+    struct JointData
+    {
+        std::string name;
+        gazebo::physics::JointPtr gz_joint;
+        double pos = 0.0, vel = 0.0, eff = 0.0; // 反馈
+        HybridCommand cmd;                      // 命令
+        std::deque<HybridCommand> cmd_buffer;   // 延迟缓冲区
+    };
+    // 触地检测
+    struct ContactSensorData
+    {
+        std::string name;
+        gazebo::sensors::ContactSensorPtr gazebo_sensor;
+        double contact_value; // 0.0 表示未触地，1.0 表示触地
+    };
+    // IMU 数据
+    struct ImuData
+    {
+        std::string name;
+        gazebo::sensors::ImuSensorPtr gazebo_sensor;
+        // 数据缓冲区
+        double ori[4];     // x, y, z, w
+        double ang_vel[3]; // x, y, z
+        double lin_acc[3]; // x, y, z
+        // 协方差
+        std::array<double, 9> ori_cov;
+        std::array<double, 9> ang_vel_cov;
+        std::array<double, 9> lin_acc_cov;
+    };
 
     class DogGazeboHW : public gazebo_ros2_control::GazeboSystemInterface
     {
@@ -33,55 +73,12 @@ namespace dog_hardware
         hardware_interface::return_type write(const rclcpp::Time &time, const rclcpp::Duration &period) override;
 
     private:
-        // 定义参数混合控制结构
-        struct HybridCommand
-        {
-            double pos_des = 0.0;
-            double vel_des = 0.0;
-            double kp = 0.0;
-            double kd = 0.0;
-            double ff = 0.0;
-            rclcpp::Time stamp; // 用于计算延迟
-        };
-
-        // 关节数据
-        struct JointData
-        {
-            std::string name;
-            gazebo::physics::JointPtr gz_joint;
-            double pos = 0.0, vel = 0.0, eff = 0.0; // 反馈
-            HybridCommand cmd;                      // 命令
-            std::deque<HybridCommand> cmd_buffer;   // 延迟缓冲区
-        };
-        std::vector<JointData> joints_;
-
-        // IMU 数据
-        struct ImuData
-        {
-            std::string name;
-            gazebo::sensors::ImuSensorPtr gazebo_sensor;
-            // 数据缓冲区
-            double ori[4];     // x, y, z, w
-            double ang_vel[3]; // x, y, z
-            double lin_acc[3]; // x, y, z
-            // 协方差
-            std::array<double, 9> ori_cov;
-            std::array<double, 9> ang_vel_cov;
-            std::array<double, 9> lin_acc_cov;
-        };
-        ImuData imu_data_;
-
-        // 触地检测
-        struct ContactSensorData
-        {
-            std::string name;
-            gazebo::sensors::ContactSensorPtr gazebo_sensor;
-            double contact_value; // 0.0 表示未触地，1.0 表示触地
-        };
-        std::vector<ContactSensorData> contact_sensors_;
+        std::vector<JointData> joints_{};
+        ImuData imu_data_{};
+        std::vector<ContactSensorData> contact_sensors_{};
 
         // 参数
-        double delay_ = 0.0;           // 秒
+        double delay_{};               // 秒
         rclcpp::Node::SharedPtr node_; // 存储节点指针用于日志
     };
 
