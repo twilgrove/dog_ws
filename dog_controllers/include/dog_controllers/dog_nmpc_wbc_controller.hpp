@@ -12,6 +12,7 @@
 #include "state_estimation/StateEstimatorBase.hpp"
 #include "state_estimation/TopicStateEstimator.hpp"
 #include "wbc/WbcBase.hpp"
+#include "wbc/WeightedWbc.hpp"
 
 namespace dog_controllers
 {

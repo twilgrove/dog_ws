@@ -32,7 +32,10 @@ namespace dog_controllers
      * WeightedWbc 求解主循环
      * 这里的逻辑是将所有 Task 转化为标准 QP 形式：min 1/2*x^T*H*x + g^T*x
      */
-    vector_t WeightedWbc::update(const vector_t &stateDesired, const vector_t &inputDesired, const vector_t &rbdStateMeasured, size_t mode,
+    vector_t WeightedWbc::update(const vector_t &stateDesired,
+                                 const vector_t &inputDesired,
+                                 const vector_t &rbdStateMeasured,
+                                 size_t mode,
                                  scalar_t period)
     {
         // 1. 首先调用基类更新基础动力学数据（J, M, nle 等）

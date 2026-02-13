@@ -8,6 +8,7 @@
 #include <pinocchio/algorithm/frames.hpp>
 #include <pinocchio/algorithm/rnea.hpp>
 #include <utility>
+#include <ocs2_legged_robot/gait/MotionPhaseDefinition.h>
 namespace dog_controllers
 {
     WbcBase::WbcBase(
@@ -28,21 +29,18 @@ namespace dog_controllers
         qMeasured_ = vector_t(info_.generalizedCoordinatesNum);
         vMeasured_ = vector_t(info_.generalizedCoordinatesNum);
     }
-    vector_t WbcBase::update(const vector_t &stateDesired, const vector_t &inputDesired, const vector_t &rbdStateMeasured, size_t mode,
+    vector_t WbcBase::update(const vector_t &stateDesired,
+                             const vector_t &inputDesired,
+                             const vector_t &rbdStateMeasured,
+                             size_t mode,
                              scalar_t /*period*/)
     {
-        // 根据当前模式确定哪些腿是支撑腿
+        // 更新接触状态
         contactFlag_ = modeNumber2StanceLeg(mode);
-        numContacts_ = 0;
-        for (bool flag : contactFlag_)
-        {
-            if (flag)
-            {
-                numContacts_++;
-            }
-        }
 
-        // 更新实测数据的动力学（Jacobian, Mass Matrix 等）
+        numContacts_ = std::count(contactFlag_.begin(), contactFlag_.end(), true);
+
+        // 更新实测数据的动力学
         updateMeasured(rbdStateMeasured);
         // 更新期望数据的动力学
         updateDesired(stateDesired, inputDesired);
@@ -55,15 +53,15 @@ namespace dog_controllers
      */
     void WbcBase::updateMeasured(const vector_t &rbdStateMeasured)
     {
-        // 将状态估计器的输出转换为 Pinocchio 的广义坐标 q 和速度 v
-        qMeasured_.head<3>() = rbdStateMeasured.segment<3>(3);                                     // 位置
-        qMeasured_.segment<3>(3) = rbdStateMeasured.head<3>();                                     // 欧拉角
-        qMeasured_.tail(info_.actuatedDofNum) = rbdStateMeasured.segment(6, info_.actuatedDofNum); // 关节角
+        qMeasured_.head<3>() = rbdStateMeasured.segment<3>(3);
+        qMeasured_.segment<3>(3) = rbdStateMeasured.head<3>();
+        qMeasured_.tail(info_.actuatedDofNum) = rbdStateMeasured.segment(6, info_.actuatedDofNum);
 
-        vMeasured_.head<3>() = rbdStateMeasured.segment<3>(info_.generalizedCoordinatesNum + 3); // 线速度
+        vMeasured_.head<3>() = rbdStateMeasured.segment<3>(info_.generalizedCoordinatesNum + 3);
         vMeasured_.segment<3>(3) = getEulerAnglesZyxDerivativesFromGlobalAngularVelocity<scalar_t>(
-            qMeasured_.segment<3>(3), rbdStateMeasured.segment<3>(info_.generalizedCoordinatesNum));                                 // 角速度转欧拉角变化率
-        vMeasured_.tail(info_.actuatedDofNum) = rbdStateMeasured.segment(info_.generalizedCoordinatesNum + 6, info_.actuatedDofNum); // 关节速度
+            qMeasured_.segment<3>(3),
+            rbdStateMeasured.segment<3>(info_.generalizedCoordinatesNum));
+        vMeasured_.tail(info_.actuatedDofNum) = rbdStateMeasured.segment(info_.generalizedCoordinatesNum + 6, info_.actuatedDofNum);
 
         const auto &model = pinocchioInterfaceMeasured_.getModel();
         auto &data = pinocchioInterfaceMeasured_.getData();
@@ -98,6 +96,23 @@ namespace dog_controllers
             pinocchio::getFrameJacobianTimeVariation(model, data, info_.endEffectorFrameIndices[i], pinocchio::LOCAL_WORLD_ALIGNED, jac);
             dj_.block(3 * i, 0, 3, info_.generalizedCoordinatesNum) = jac.template topRows<3>();
         }
+    }
+
+    // 更新期望状态：计算期望运动学量
+    void WbcBase::updateDesired(const vector_t &stateDesired, const vector_t &inputDesired)
+    {
+        const auto &model = pinocchioInterfaceDesired_.getModel();
+        auto &data = pinocchioInterfaceDesired_.getData();
+
+        // 设置映射并获取期望关节位置和速度
+        mapping_.setPinocchioInterface(pinocchioInterfaceDesired_);
+        const auto qDesired = mapping_.getPinocchioJointPosition(stateDesired);
+        pinocchio::forwardKinematics(model, data, qDesired);
+        pinocchio::computeJointJacobians(model, data, qDesired);
+        pinocchio::updateFramePlacements(model, data);
+        updateCentroidalDynamics(pinocchioInterfaceDesired_, info_, qDesired); // 更新质心动力学
+        const vector_t vDesired = mapping_.getPinocchioJointVelocity(stateDesired, inputDesired);
+        pinocchio::forwardKinematics(model, data, qDesired, vDesired); // 带速度的前向运动学
     }
 
     /**

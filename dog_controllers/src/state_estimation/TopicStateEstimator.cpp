@@ -9,11 +9,15 @@ namespace dog_controllers
         rclcpp_lifecycle::LifecycleNode::SharedPtr &node)
         : StateEstimatorBase(pinocchioInterface, eeKinematics, node)
     {
+        RCLCPP_INFO(node_->get_logger(), "\033[1;36m====================================================\033[0m");
+        RCLCPP_INFO(node_->get_logger(), "\033[1;36m[ 初始化开始 ] 🚀 TopicEstimator\033[0m");
         sub_ = node->create_subscription<nav_msgs::msg::Odometry>(
             "/ground_truth", rclcpp::SensorDataQoS().keep_last(1),
             [this](const nav_msgs::msg::Odometry::SharedPtr msg)
             { this->odomCallback(msg); });
         RCLCPP_INFO(node_->get_logger(), "\033[1;32m[ 初始化完成 ] ✅ TopicEstimator\033[0m");
+
+        RCLCPP_INFO(node_->get_logger(), "\033[1;32m====================================================\033[0m");
     }
 
     void TopicEstimator::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)

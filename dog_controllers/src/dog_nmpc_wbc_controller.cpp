@@ -58,7 +58,8 @@ namespace dog_controllers
             &(state_estimator_->results),
             node_);
 
-        wbc_ = std::make_unique<WbcBase>(
+        wbc_ = std::make_unique<WeightedWbc>(
+            taskFile,
             dog_interface_->getPinocchioInterface(),
             dog_interface_->getCentroidalModelInfo(),
             dog_interface_->getEndEffectorKinematics());
