@@ -74,6 +74,7 @@ namespace dog_controllers
         vector_t qMeasured_{}, vMeasured_{};       // 关节位置/速度观测
         vector_t inputLast_{};                     // 上一时刻控制量
         matrix_t j_{}, dj_{};                      // 接触雅可比及其导数
+        Eigen::Matrix<scalar_t, 6, 18> jac;        // 足端雅可比矩阵（6x18，包含位置和旋转部分）
         contact_flag_t contactFlag_{};             // 接触状态标志
         size_t numDecisionVars_{}, numContacts_{}; // 决策变量与接触点数
 

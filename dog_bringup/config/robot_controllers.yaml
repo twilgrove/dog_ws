@@ -32,19 +32,19 @@ DogNmpcWbcController:
       - LF_HAA
       - LF_HFE
       - LF_KFE
-      - LH_HAA
-      - LH_HFE
-      - LH_KFE
       - RF_HAA
       - RF_HFE
       - RF_KFE
+      - LH_HAA
+      - LH_HFE
+      - LH_KFE
       - RH_HAA
       - RH_HFE
       - RH_KFE
     contacts:
       - LH_contact_sensor
-      - LH_contact_sensor
       - RF_contact_sensor
+      - LH_contact_sensor
       - RH_contact_sensor
 
 joint_state_broadcaster:
@@ -53,12 +53,12 @@ joint_state_broadcaster:
       - LF_HAA
       - LF_HFE
       - LF_KFE
-      - LH_HAA
-      - LH_HFE
-      - LH_KFE
       - RF_HAA
       - RF_HFE
       - RF_KFE
+      - LH_HAA
+      - LH_HFE
+      - LH_KFE
       - RH_HAA
       - RH_HFE
       - RH_KFE
@@ -69,12 +69,12 @@ effort_controller:
       - LF_HAA
       - LF_HFE
       - LF_KFE
-      - LH_HAA
-      - LH_HFE
-      - LH_KFE
       - RF_HAA
       - RF_HFE
       - RF_KFE
+      - LH_HAA
+      - LH_HFE
+      - LH_KFE
       - RH_HAA
       - RH_HFE
       - RH_KFE

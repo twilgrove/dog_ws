@@ -69,6 +69,7 @@ namespace dog_controllers
         // 执行前向运动学计算
         pinocchio::forwardKinematics(model, data, qMeasured_, vMeasured_);
         pinocchio::computeJointJacobians(model, data);
+        pinocchio::computeJointJacobiansTimeVariation(model, data, qMeasured_, vMeasured_);
         pinocchio::updateFramePlacements(model, data);
         // 计算质量矩阵 M (Composite Rigid Body Algorithm)
         pinocchio::crba(model, data, qMeasured_);
@@ -80,18 +81,15 @@ namespace dog_controllers
         j_ = matrix_t(3 * info_.numThreeDofContacts, info_.generalizedCoordinatesNum);
         for (size_t i = 0; i < info_.numThreeDofContacts; ++i)
         {
-            Eigen::Matrix<scalar_t, 6, Eigen::Dynamic> jac;
             jac.setZero(6, info_.generalizedCoordinatesNum);
             pinocchio::getFrameJacobian(model, data, info_.endEffectorFrameIndices[i], pinocchio::LOCAL_WORLD_ALIGNED, jac);
             j_.block(3 * i, 0, 3, info_.generalizedCoordinatesNum) = jac.template topRows<3>();
         }
 
         // 计算雅可比矩阵的时间导数 dJ
-        pinocchio::computeJointJacobiansTimeVariation(model, data, qMeasured_, vMeasured_);
         dj_ = matrix_t(3 * info_.numThreeDofContacts, info_.generalizedCoordinatesNum);
         for (size_t i = 0; i < info_.numThreeDofContacts; ++i)
         {
-            Eigen::Matrix<scalar_t, 6, Eigen::Dynamic> jac;
             jac.setZero(6, info_.generalizedCoordinatesNum);
             pinocchio::getFrameJacobianTimeVariation(model, data, info_.endEffectorFrameIndices[i], pinocchio::LOCAL_WORLD_ALIGNED, jac);
             dj_.block(3 * i, 0, 3, info_.generalizedCoordinatesNum) = jac.template topRows<3>();
@@ -104,26 +102,23 @@ namespace dog_controllers
         const auto &model = pinocchioInterfaceDesired_.getModel();
         auto &data = pinocchioInterfaceDesired_.getData();
 
-        // 设置映射并获取期望关节位置和速度
         mapping_.setPinocchioInterface(pinocchioInterfaceDesired_);
         const auto qDesired = mapping_.getPinocchioJointPosition(stateDesired);
         pinocchio::forwardKinematics(model, data, qDesired);
         pinocchio::computeJointJacobians(model, data, qDesired);
         pinocchio::updateFramePlacements(model, data);
-        updateCentroidalDynamics(pinocchioInterfaceDesired_, info_, qDesired); // 更新质心动力学
+        updateCentroidalDynamics(pinocchioInterfaceDesired_, info_, qDesired);
         const vector_t vDesired = mapping_.getPinocchioJointVelocity(stateDesired, inputDesired);
-        pinocchio::forwardKinematics(model, data, qDesired, vDesired); // 带速度的前向运动学
+        pinocchio::forwardKinematics(model, data, qDesired, vDesired);
     }
 
     /**
-     * 构造浮基座运动学方程 (Floating Base Equation of Motion)
-     * M*q_acc + h = J^T * f + S^T * tau
+     * 构造全身运动学方程
      */
     Task WbcBase::formulateFloatingBaseEomTask()
     {
         auto &data = pinocchioInterfaceMeasured_.getData();
 
-        // 这里的 S 是选择矩阵，用于提取被驱动的关节（非浮基座部分）
         matrix_t s(info_.actuatedDofNum, info_.generalizedCoordinatesNum);
         s.block(0, 0, info_.actuatedDofNum, 6).setZero();
         s.block(0, 6, info_.actuatedDofNum, info_.actuatedDofNum).setIdentity();
@@ -136,14 +131,14 @@ namespace dog_controllers
     }
 
     /**
-     * 构造关节力矩限制任务 (Torque Limits)
+     * 构造关节力矩限制任务
      */
     Task WbcBase::formulateTorqueLimitsTask()
     {
         matrix_t d(2 * info_.actuatedDofNum, numDecisionVars_);
         d.setZero();
         matrix_t i = matrix_t::Identity(info_.actuatedDofNum, info_.actuatedDofNum);
-        // 提取决策变量中的力矩部分 tau
+
         d.block(0, info_.generalizedCoordinatesNum + 3 * info_.numThreeDofContacts, info_.actuatedDofNum, info_.actuatedDofNum) = i;
         d.block(info_.actuatedDofNum, info_.generalizedCoordinatesNum + 3 * info_.numThreeDofContacts, info_.actuatedDofNum,
                 info_.actuatedDofNum) = -i;
@@ -157,8 +152,7 @@ namespace dog_controllers
     }
 
     /**
-     * 构造支撑腿不动的任务 (No Contact Motion)
-     * 约束：J*q_acc + dJ*q_vel = 0 (即足端加速度为0)
+     * 构造支撑腿不动的任务
      */
     Task WbcBase::formulateNoContactMotionTask()
     {
@@ -208,7 +202,7 @@ namespace dog_controllers
             0, 1, -frictionCoeff_, // |Fy| < mu*Fz
             0, -1, -frictionCoeff_;
 
-        matrix_t d(5 * numContacts_ + 3 * (info_.numThreeDofContacts - numContacts_), numDecisionVars_);
+        matrix_t d(5 * numContacts_, numDecisionVars_);
         d.setZero();
         j = 0;
         for (size_t i = 0; i < info_.numThreeDofContacts; ++i)
@@ -231,7 +225,6 @@ namespace dog_controllers
     {
         matrix_t a(6, numDecisionVars_);
         a.setZero();
-        // 提取决策变量中的前 6 维 (浮基座加速度)
         a.block(0, 0, 6, 6) = matrix_t::Identity(6, 6);
 
         // 计算期望的关节加速度
@@ -250,7 +243,6 @@ namespace dog_controllers
         const vector_t vDesired = mapping_.getPinocchioJointVelocity(stateDesired, inputDesired);
         const auto ADot = pinocchio::dccrba(model, data, qDesired, vDesired);
 
-        // 质心动量变化率 = Ab*v_base_acc + Aj*v_joint_acc + ADot*v_all
         Vector6 centroidalMomentumRate = info_.robotMass * getNormalizedCentroidalMomentumRate(pinocchioInterfaceDesired_, info_, inputDesired);
         centroidalMomentumRate.noalias() -= ADot * vDesired;
         centroidalMomentumRate.noalias() -= Aj * jointAccel;
@@ -262,7 +254,6 @@ namespace dog_controllers
 
     /**
      * 构造摆动腿任务 (Swing Leg Tracking)
-     * 使用 PD 控制器跟踪 NMPC 给出的足端轨迹位置和速度
      */
     Task WbcBase::formulateSwingLegTask()
     {
@@ -295,8 +286,7 @@ namespace dog_controllers
     }
 
     /**
-     * 构造接触力任务 (Contact Force)
-     * 让 WBC 计算出的力尽量贴合 NMPC 优化出来的期望力 (Feedforward)
+     * 构造接触力任务
      */
     Task WbcBase::formulateContactForceTask(const vector_t &inputDesired) const
     {
@@ -308,7 +298,7 @@ namespace dog_controllers
         {
             a.block(3 * i, info_.generalizedCoordinatesNum + 3 * i, 3, 3) = matrix_t::Identity(3, 3);
         }
-        // NMPC 的 inputDesired 前部分通常就是期望接触力
+
         b = inputDesired.head(a.rows());
 
         return {a, b, matrix_t(), vector_t()};

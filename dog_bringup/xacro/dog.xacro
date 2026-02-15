@@ -57,8 +57,8 @@
 
 
     <xacro:dog_leg name="LF" mirror="1" f_b="1"/>
-    <xacro:dog_leg name="LH" mirror="1" f_b="-1"/>
     <xacro:dog_leg name="RF" mirror="-1" f_b="1"/>
+    <xacro:dog_leg name="LH" mirror="1" f_b="-1"/>
     <xacro:dog_leg name="RH" mirror="-1" f_b="-1"/>
 
     <ros2_control name="dog_System" type="system">
@@ -89,13 +89,13 @@
         </sensor>
 
         <sensor name="LF_contact_sensor"> <state_interface name="contact"/></sensor>
-        <sensor name="LH_contact_sensor"> <state_interface name="contact"/></sensor>
         <sensor name="RF_contact_sensor"> <state_interface name="contact"/></sensor>
+        <sensor name="LH_contact_sensor"> <state_interface name="contact"/></sensor>
         <sensor name="RH_contact_sensor"> <state_interface name="contact"/></sensor>
         
         <xacro:leg_control_interface name="LF"/>
-        <xacro:leg_control_interface name="LH"/>
         <xacro:leg_control_interface name="RF"/>
+        <xacro:leg_control_interface name="LH"/>
         <xacro:leg_control_interface name="RH"/>
     </ros2_control>
 
