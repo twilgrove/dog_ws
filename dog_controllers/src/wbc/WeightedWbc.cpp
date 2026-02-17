@@ -7,35 +7,42 @@ namespace dog_controllers
         const std::string &taskFile,
         const PinocchioInterface &pinocchioInterface,
         const CentroidalModelInfo &info,
-        const PinocchioEndEffectorKinematics &eeKinematics)
-        : WbcBase(pinocchioInterface, info, eeKinematics)
+        const PinocchioEndEffectorKinematics &eeKinematics,
+        rclcpp_lifecycle::LifecycleNode::SharedPtr &node)
+        : WbcBase(pinocchioInterface, info, eeKinematics, node)
     {
-        RCLCPP_INFO(rclcpp::get_logger("DogNmpcWbcController"), "\033[1;36m====================================================\033[0m");
-        RCLCPP_INFO(rclcpp::get_logger("DogNmpcWbcController"), "\033[1;36m[ 初始化开始 ] 🚀 WeightedWbc\033[0m");
+        RCLCPP_INFO(node_->get_logger(), "\033[1;36m====================================================\033[0m");
+        RCLCPP_INFO(node_->get_logger(), "\033[1;36m[ 初始化开始 ] 🚀 WeightedWbc\033[0m");
         boost::property_tree::ptree pt;
         boost::property_tree::read_info(taskFile, pt);
         loadData::loadPtreeValue(pt, weightSwingLeg_, "weight.swingLeg", false);
         loadData::loadPtreeValue(pt, weightBaseAccel_, "weight.baseAccel", false);
         loadData::loadPtreeValue(pt, weightContactForce_, "weight.contactForce", false);
         torqueLimits_.resize(3);
-        loadData::loadPtreeValue(pt, torqueLimits_(0), "torqueLimitsTask.(0,0)", false);
-        loadData::loadPtreeValue(pt, torqueLimits_(1), "torqueLimitsTask.(1,0)", false);
-        loadData::loadPtreeValue(pt, torqueLimits_(2), "torqueLimitsTask.(2,0)", false);
-        loadData::loadPtreeValue(pt, frictionCoeff_, "frictionConeTask.frictionCoefficient", true);
-        loadData::loadPtreeValue(pt, swingKp_, "swingLegTask.kp", true);
-        loadData::loadPtreeValue(pt, swingKd_, "swingLegTask.kd", true);
+        loadData::loadPtreeValue(pt, torqueLimits_(0), "torqueLimitsTask.HAA", false);
+        loadData::loadPtreeValue(pt, torqueLimits_(1), "torqueLimitsTask.HFE", false);
+        loadData::loadPtreeValue(pt, torqueLimits_(2), "torqueLimitsTask.KFE", false);
+        loadData::loadPtreeValue(pt, frictionCoeff_, "frictionConeTask.frictionCoefficient", false);
+        loadData::loadPtreeValue(pt, swingKp_, "swingLegTask.kp", false);
+        loadData::loadPtreeValue(pt, swingKd_, "swingLegTask.kd", false);
+        loadData::loadPtreeValue(pt, baseKpw_, "baseTask.kpw", false);
+        loadData::loadPtreeValue(pt, baseKdw_, "baseTask.kdw", false);
+        loadData::loadPtreeValue(pt, baseKpj_, "baseTask.kpj", false);
+        loadData::loadPtreeValue(pt, baseKdj_, "baseTask.kdj", false);
 
-        RCLCPP_INFO(rclcpp::get_logger("DogNmpcWbcController"), "\033[1;33m📊 [PARAM] 已加载 WBC 权重配置清单:\033[0m");
-        RCLCPP_INFO(rclcpp::get_logger("DogNmpcWbcController"), "\033[1;33m  ├─ 关节力矩限制 (H,H,K): \033[0m[%.1f, %.1f, %.1f] N.m",
+        RCLCPP_INFO(node_->get_logger(), "\033[1;33m📊 [PARAM] 已加载 WBC 权重配置清单:\033[0m");
+        RCLCPP_INFO(node_->get_logger(), "\033[1;33m  ├─ 关节力矩限制 (H,H,K): \033[0m[%.1f, %.1f, %.1f] N.m",
                     torqueLimits_(0), torqueLimits_(1), torqueLimits_(2));
-        RCLCPP_INFO(rclcpp::get_logger("DogNmpcWbcController"), "\033[1;33m  ├─ 地面摩擦系数        : \033[0m%.2f", frictionCoeff_);
-        RCLCPP_INFO(rclcpp::get_logger("DogNmpcWbcController"), "\033[1;33m  ├─ 摆动腿 PD 增益      : \033[0mKp=%.1f, Kd=%.1f", swingKp_, swingKd_);
-        RCLCPP_INFO(rclcpp::get_logger("DogNmpcWbcController"), "\033[1;33m  ├─ 摆动腿跟踪权重       : \033[0m%.3f", weightSwingLeg_);
-        RCLCPP_INFO(rclcpp::get_logger("DogNmpcWbcController"), "\033[1;33m  ├─ 机身加速度权重       : \033[0m%.3f", weightBaseAccel_);
-        RCLCPP_INFO(rclcpp::get_logger("DogNmpcWbcController"), "\033[1;33m  └─ 接触力正则化         : \033[0m%.3f", weightContactForce_);
+        RCLCPP_INFO(node_->get_logger(), "\033[1;33m  ├─ 地面摩擦系数        : \033[0m%.2f", frictionCoeff_);
+        RCLCPP_INFO(node_->get_logger(), "\033[1;33m  ├─ 摆动腿 PD 增益      : \033[0mKp=%.1f, Kd=%.1f", swingKp_, swingKd_);
+        RCLCPP_INFO(node_->get_logger(), "\033[1;33m  ├─ 基座位置 PD 增益    : \033[0mKp=%.1f, Kd=%.1f", baseKpw_, baseKdw_);
+        RCLCPP_INFO(node_->get_logger(), "\033[1;33m  ├─ 基座姿态 PD 增益    : \033[0mKp=%.1f, Kd=%.1f", baseKpj_, baseKdj_);
+        RCLCPP_INFO(node_->get_logger(), "\033[1;33m  ├─ 摆动腿跟踪权重       : \033[0m%.3f", weightSwingLeg_);
+        RCLCPP_INFO(node_->get_logger(), "\033[1;33m  ├─ 机身加速度权重       : \033[0m%.3f", weightBaseAccel_);
+        RCLCPP_INFO(node_->get_logger(), "\033[1;33m  └─ 接触力正则化         : \033[0m%.3f", weightContactForce_);
 
-        RCLCPP_INFO(rclcpp::get_logger("DogNmpcWbcController"), "\033[1;32m[ 初始化完成 ] ✅ WeightedWbc\033[0m");
-        RCLCPP_INFO(rclcpp::get_logger("DogNmpcWbcController"), "\033[1;32m====================================================\033[0m");
+        RCLCPP_INFO(node_->get_logger(), "\033[1;32m[ 初始化完成 ] ✅ WeightedWbc\033[0m");
+        RCLCPP_INFO(node_->get_logger(), "\033[1;32m====================================================\033[0m");
     }
 
     /**
@@ -64,7 +71,7 @@ namespace dog_controllers
         ubA << constraints.b_, constraints.f_;
 
         // 3. 构造加权目标函数
-        Task weighedTask = formulateWeightedTasks(stateDesired, inputDesired, period);
+        Task weighedTask = formulateWeightedTasks(rbdStateMeasured, stateDesired, inputDesired, period);
 
         Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> H = weighedTask.a_.transpose() * weighedTask.a_;
         vector_t g = -weighedTask.a_.transpose() * weighedTask.b_;
@@ -85,6 +92,10 @@ namespace dog_controllers
         vector_t qpSol(numDecisionVars_);
         qpProblem.getPrimalSolution(qpSol.data());
 
+        float total_fz = qpSol(18 + 2) + qpSol(18 + 5) + qpSol(18 + 8) + qpSol(18 + 11);
+        // RCLCPP_INFO_THROTTLE(node_->get_logger(), *node_->get_clock(), 500,
+        //                      "\033[1;32m[Force Check]\033[0m Total Fz: %.2f N | Single Leg Fz: %.2f N",
+        //                      total_fz, qpSol(18 + 2));
         return qpSol;
     }
 
@@ -99,11 +110,14 @@ namespace dog_controllers
     /**
      * 汇总并加权所有目标任务
      */
-    Task WeightedWbc::formulateWeightedTasks(const vector_t &stateDesired, const vector_t &inputDesired, scalar_t period)
+    Task WeightedWbc::formulateWeightedTasks(const vector_t &rbdStateMeasured, const vector_t &stateDesired, const vector_t &inputDesired, scalar_t period)
     {
-        //  formulateSwingLegTask() * weightSwingLeg_ +
-        //  formulateBaseAccelTask(stateDesired, inputDesired, period) * weightBaseAccel_ +
-        return formulateContactForceTask(inputDesired) * weightContactForce_;
+        // return formulateSwingLegTask() * weightSwingLeg_ +
+        //        formulateBaseAccelTask(stateDesired, inputDesired, period) * weightBaseAccel_ +
+        //        formulateContactForceTask(inputDesired) * weightContactForce_ ;
+        return formulateContactForceTask2() * weightContactForce_ +
+               formulateJointRegularizationTask() * weightSwingLeg_ +
+               formulateBaseAccelTask2(rbdStateMeasured) * weightBaseAccel_;
     }
 
 }

@@ -24,7 +24,8 @@ namespace dog_controllers
         WbcBase(
             const PinocchioInterface &pinocchioInterface,
             const CentroidalModelInfo &info,
-            const PinocchioEndEffectorKinematics &eeKinematics);
+            const PinocchioEndEffectorKinematics &eeKinematics,
+            rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
 
         virtual ~WbcBase() = default;
 
@@ -61,6 +62,10 @@ namespace dog_controllers
         // 构建接触力跟踪任务
         Task formulateContactForceTask(const vector_t &inputDesired) const;
 
+        Task formulateBaseAccelTask2(const vector_t &rbdStateMeasured);
+        Task formulateContactForceTask2();
+        Task formulateJointRegularizationTask();
+
         // --- 核心模型与映射 ---
         CentroidalModelInfo info_;                // 机器人模型参数
         CentroidalModelPinocchioMapping mapping_; // 质心到全身状态映射
@@ -77,10 +82,13 @@ namespace dog_controllers
         Eigen::Matrix<scalar_t, 6, 18> jac;        // 足端雅可比矩阵（6x18，包含位置和旋转部分）
         contact_flag_t contactFlag_{};             // 接触状态标志
         size_t numDecisionVars_{}, numContacts_{}; // 决策变量与接触点数
+        rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
 
         // --- 任务增益与物理限制 ---
         vector_t torqueLimits_{};        // 关节力矩限制
         scalar_t frictionCoeff_{};       // 摩擦系数
         scalar_t swingKp_{}, swingKd_{}; // 摆动腿 PD 增益
+        scalar_t baseKpw_{}, baseKdw_{}; // 基座位置 PD 增益
+        scalar_t baseKpj_{}, baseKdj_{}; // 基座姿态 PD 增益
     };
 }

@@ -9,7 +9,8 @@ namespace dog_controllers
             const std::string &taskFile,
             const PinocchioInterface &pinocchioInterface,
             const CentroidalModelInfo &info,
-            const PinocchioEndEffectorKinematics &eeKinematics);
+            const PinocchioEndEffectorKinematics &eeKinematics,
+            rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
 
         ~WeightedWbc() override = default;
 
@@ -21,7 +22,7 @@ namespace dog_controllers
 
         virtual Task formulateConstraints();
 
-        virtual Task formulateWeightedTasks(const vector_t &stateDesired, const vector_t &inputDesired, scalar_t period);
+        virtual Task formulateWeightedTasks(const vector_t &rbdStateMeasured, const vector_t &stateDesired, const vector_t &inputDesired, scalar_t period);
 
         // 任务权重参数：摆动腿跟踪权重、基座加速度权重、接触力权重
         scalar_t weightSwingLeg_, weightBaseAccel_, weightContactForce_;

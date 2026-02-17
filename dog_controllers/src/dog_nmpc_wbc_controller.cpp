@@ -62,7 +62,8 @@ namespace dog_controllers
             taskFile,
             dog_interface_->getPinocchioInterface(),
             dog_interface_->getCentroidalModelInfo(),
-            dog_interface_->getEndEffectorKinematics());
+            dog_interface_->getEndEffectorKinematics(),
+            node_);
 
         return CallbackReturn::SUCCESS;
     }
@@ -71,18 +72,32 @@ namespace dog_controllers
     {
         bridge_->read_from_hw();
 
-        // for (int i = 0; i < 4; ++i)
-        // {
-        //     for (int j = 0; j < 3; ++j)
-        //     {
-        //         bridge_->legs[i].joints[j]->cmd_pos = 0.0;
-        //         bridge_->legs[i].joints[j]->cmd_kp = 40.0;
-        //         bridge_->legs[i].joints[j]->cmd_kd = 2.0;
-        //         bridge_->legs[i].joints[j]->cmd_ff = 0.0;
-        //         bridge_->legs[i].joints[j]->cmd_vel = 0.0;
-        //     }
-        // }
         state_estimator_->estimate(bridge_->legs, bridge_->imu, period);
+
+        vector_t dummyState = vector_t::Zero(24);
+        vector_t dummyInput = vector_t::Zero(24);
+        vector_t qpResult = wbc_->update(dummyState,
+                                         dummyInput,
+                                         state_estimator_->results.rbdState_36,
+                                         state_estimator_->results.contactFlags_MPC,
+                                         period.seconds());
+        Eigen::Vector3d qNom;
+        qNom << 0.0, -0.8, 1.5;
+        for (int i = 0; i < 4; ++i)
+        {
+            for (int j = 0; j < 3; ++j)
+            {
+                int jointIdx = i * 3 + j;
+
+                bridge_->legs[i].joints[j]->cmd_pos = qNom(j); // 目标角度 (0, -0.8, 1.5)
+                bridge_->legs[i].joints[j]->cmd_vel = 0.0;     // 目标速度设为 0
+                bridge_->legs[i].joints[j]->cmd_kp = 10.0;     // 低增益 Kp，提供基础刚度
+                bridge_->legs[i].joints[j]->cmd_kd = 1.0;      // 阻尼，防止震荡
+
+                bridge_->legs[i].joints[j]->cmd_ff = qpResult(30 + jointIdx);
+            }
+        }
+
         bridge_->write_to_hw();
         debug_manager_->publish();
         return controller_interface::return_type::OK;

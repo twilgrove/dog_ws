@@ -58,8 +58,8 @@ def generate_launch_description():
     spawn_entity = Node(
         package="gazebo_ros",
         executable="spawn_entity.py",
-        respawn=True,
-        respawn_delay=2.0,
+        # respawn=True,
+        # respawn_delay=2.0,
         arguments=[
             "-topic",
             "robot_description",
@@ -70,7 +70,7 @@ def generate_launch_description():
             "-y",
             "0",
             "-z",
-            "0.5",
+            "0.4",
             "-timeout",
             "300",
         ],

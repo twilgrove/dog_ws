@@ -18,7 +18,7 @@ namespace dog_controllers
     {
         /**
          * 36维全状态向量 (rbdState_36) 索引定义：
-         * 0-2  : 基座姿态 - 欧拉角 (Euler Angles: Roll, Pitch, Yaw)
+         * 0-2  : 基座姿态 - 欧拉角 (Euler Angles: Z,Y,X )
          * 3-5  : 基座位置 - 世界坐标系 (Base Position: x, y, z)
          * 6-17 : 12个关节角度 (Joint Angles: 顺序通常为 LF, RF, LH, RH 的 HAA, HFE, KFE)
          * 18-20: 基座角速度 - 机体坐标系/世界系 (Angular Velocity: wx, wy, wz)
@@ -55,24 +55,19 @@ namespace dog_controllers
         inline vector3_t quatToZyx(const Eigen::Quaternion<scalar_t> &q)
         {
             vector3_t zyx;
+            scalar_t w = q.w(), x = q.x(), y = q.y(), z = q.z();
 
-            const scalar_t w = q.w();
-            const scalar_t x = q.x();
-            const scalar_t y = q.y();
-            const scalar_t z = q.z();
-
-            scalar_t sinP = -2.0 * (x * z - w * y);
-
+            scalar_t sinP = 2.0 * (w * y - z * x);
             if (std::abs(sinP) >= 1.0)
             {
                 zyx(1) = std::copysign(M_PI / 2.0, sinP);
-                zyx(2) = 0.0;
                 zyx(0) = std::atan2(2.0 * (x * y + w * z), 1.0 - 2.0 * (y * y + z * z));
+                zyx(2) = 0.0;
             }
             else
             {
                 zyx(1) = std::asin(sinP);
-                zyx(0) = std::atan2(2.0 * (x * y + w * z), 1.0 - 2.0 * (x * x + y * y));
+                zyx(0) = std::atan2(2.0 * (x * y + w * z), 1.0 - 2.0 * (y * y + z * z));
                 zyx(2) = std::atan2(2.0 * (y * z + w * x), 1.0 - 2.0 * (x * x + y * y));
             }
             return zyx;
