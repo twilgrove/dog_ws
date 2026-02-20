@@ -10,9 +10,10 @@ namespace dog_controllers
     KalmanFilterEstimator::KalmanFilterEstimator(
         const std::string &taskFile,
         const PinocchioInterface &pinocchioInterface,
+        const CentroidalModelInfo &info,
         const PinocchioEndEffectorKinematics &eeKinematics,
         rclcpp_lifecycle::LifecycleNode::SharedPtr &node)
-        : StateEstimatorBase(pinocchioInterface, eeKinematics, node)
+        : StateEstimatorBase(pinocchioInterface, info, eeKinematics, node)
     {
 
         RCLCPP_INFO(node_->get_logger(), "\033[1;36m====================================================\033[0m");
@@ -87,6 +88,8 @@ namespace dog_controllers
 
         results.rbdState_36.segment<3>(3) = xHat_.segment<3>(0);  // 世界系位置
         results.rbdState_36.segment<3>(21) = xHat_.segment<3>(3); // 世界系线速度
+
+        updateObservationFromResults(period);
 
         return results.rbdState_36;
     }

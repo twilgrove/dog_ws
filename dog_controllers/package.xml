@@ -17,6 +17,7 @@
   <depend>ocs2_robotic_tools</depend>
   <depend>dog_common</depend>
   <depend>tf2_ros</depend>
+  <depend>angles</depend>
   <depend>eigen</depend>
   <depend>boost</depend>
   <depend>qpoases_vendor</depend>

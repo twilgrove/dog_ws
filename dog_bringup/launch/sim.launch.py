@@ -76,7 +76,7 @@ def generate_launch_description():
         ],
         output="screen",
     )
-    test_controller = Node(
+    controller = Node(
         package="controller_manager",
         executable="spawner",
         arguments=["DogNmpcWbcController"],
@@ -109,7 +109,7 @@ def generate_launch_description():
 
     ld.add_action(load_joint_state_broadcaster)
     # ld.add_action(load_effort_controller)
-    ld.add_action(test_controller)
+    ld.add_action(controller)
     ld.add_action(load_imu_broadcaster)
 
     return ld

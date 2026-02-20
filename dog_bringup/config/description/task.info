@@ -1,5 +1,5 @@
-// 动力学模型类型：0 - 全质心动力学（计算量大），1 - 单刚体动力学（SRBD，计算快，四足常用）
-centroidalModelType             0  // ##(1)  
+// 动力学模型类型：0 - 全质心动力学，1 - 单刚体动力学
+centroidalModelType             0  
   
 // 机器人接口全局设置
 legged_robot_interface

@@ -11,6 +11,7 @@ namespace dog_controllers
         KalmanFilterEstimator(
             const std::string &taskFile,
             const PinocchioInterface &pinocchioInterface,
+            const CentroidalModelInfo &info,
             const PinocchioEndEffectorKinematics &eeKinematics,
             rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
 

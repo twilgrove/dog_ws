@@ -36,12 +36,14 @@ namespace dog_controllers
         state_estimator_ = std::make_unique<KalmanFilterEstimator>(
             taskFile,
             dog_interface_->getPinocchioInterface(),
+            dog_interface_->getCentroidalModelInfo(),
             dog_interface_->getEndEffectorKinematics(), node_);
     }
     void DogNmpcWbcController_God::init_real_or_god()
     {
         state_estimator_ = std::make_unique<TopicEstimator>(
             dog_interface_->getPinocchioInterface(),
+            dog_interface_->getCentroidalModelInfo(),
             dog_interface_->getEndEffectorKinematics(), node_);
     }
 
@@ -56,6 +58,9 @@ namespace dog_controllers
         debug_manager_ = std::make_unique<DebugManager>(
             &(bridge_->imu),
             &(state_estimator_->results),
+            dog_interface_->getPinocchioInterface(),
+            dog_interface_->getCentroidalModelInfo(),
+            dog_interface_->getEndEffectorKinematics(),
             node_);
 
         wbc_ = std::make_unique<WeightedWbc>(
@@ -74,32 +79,32 @@ namespace dog_controllers
 
         state_estimator_->estimate(bridge_->legs, bridge_->imu, period);
 
-        vector_t dummyState = vector_t::Zero(24);
-        vector_t dummyInput = vector_t::Zero(24);
-        vector_t qpResult = wbc_->update(dummyState,
-                                         dummyInput,
-                                         state_estimator_->results.rbdState_36,
-                                         state_estimator_->results.contactFlags_MPC,
-                                         period.seconds());
-        Eigen::Vector3d qNom;
-        qNom << 0.0, -0.8, 1.5;
-        for (int i = 0; i < 4; ++i)
-        {
-            for (int j = 0; j < 3; ++j)
-            {
-                int jointIdx = i * 3 + j;
+        // vector_t dummyState = vector_t::Zero(24);
+        // vector_t dummyInput = vector_t::Zero(24);
+        // vector_t qpResult = wbc_->update(dummyState,
+        //                                  dummyInput,
+        //                                  state_estimator_->results.rbdState_36,
+        //                                  state_estimator_->results.contactFlags_MPC,
+        //                                  period.seconds());
+        // Eigen::Vector3d qNom;
+        // qNom << 0.0, -0.8, 1.5;
+        // for (int i = 0; i < 4; ++i)
+        // {
+        //     for (int j = 0; j < 3; ++j)
+        //     {
+        //         int jointIdx = i * 3 + j;
 
-                bridge_->legs[i].joints[j]->cmd_pos = qNom(j); // 目标角度 (0, -0.8, 1.5)
-                bridge_->legs[i].joints[j]->cmd_vel = 0.0;     // 目标速度设为 0
-                bridge_->legs[i].joints[j]->cmd_kp = 10.0;     // 低增益 Kp，提供基础刚度
-                bridge_->legs[i].joints[j]->cmd_kd = 1.0;      // 阻尼，防止震荡
+        //         bridge_->legs[i].joints[j]->cmd_pos = qNom(j); // 目标角度 (0, -0.8, 1.5)
+        //         bridge_->legs[i].joints[j]->cmd_vel = 0.0;     // 目标速度设为 0
+        //         bridge_->legs[i].joints[j]->cmd_kp = 10.0;     // 低增益 Kp，提供基础刚度
+        //         bridge_->legs[i].joints[j]->cmd_kd = 1.0;      // 阻尼，防止震荡
 
-                bridge_->legs[i].joints[j]->cmd_ff = qpResult(30 + jointIdx);
-            }
-        }
+        //         bridge_->legs[i].joints[j]->cmd_ff = qpResult(30 + jointIdx);
+        //     }
+        // }
 
         bridge_->write_to_hw();
-        debug_manager_->publish();
+        debug_manager_->update_debug(state_estimator_->currentObservation_);
         return controller_interface::return_type::OK;
     }
 }

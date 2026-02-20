@@ -27,6 +27,7 @@ find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(qpoases_vendor REQUIRED)
+find_package(angles REQUIRED)
 
 find_package(ament_cmake REQUIRED)
 find_package(urdf REQUIRED)
@@ -35,6 +36,7 @@ find_package(Boost REQUIRED COMPONENTS system filesystem log_setup log)
 find_package(ocs2_core REQUIRED)
 find_package(ocs2_robotic_tools REQUIRED)
 find_package(ocs2_legged_robot REQUIRED)
+find_package(ocs2_legged_robot_ros REQUIRED)
 find_package(ocs2_pinocchio_interface REQUIRED)
 find_package(ocs2_centroidal_model REQUIRED)
 
@@ -66,6 +68,7 @@ ament_target_dependencies(
   ocs2_pinocchio_interface
   ocs2_centroidal_model
   ocs2_robotic_tools
+  ocs2_legged_robot_ros
   dog_bringup
   Boost
   Eigen3
@@ -77,6 +80,7 @@ ament_target_dependencies(
   tf2_ros
   tf2_geometry_msgs
   urdf
+  angles
   urdfdom
   qpoases_vendor)
 

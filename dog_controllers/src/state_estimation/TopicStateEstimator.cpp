@@ -5,9 +5,10 @@ namespace dog_controllers
 {
     TopicEstimator::TopicEstimator(
         const PinocchioInterface &pinocchioInterface,
+        const CentroidalModelInfo &info,
         const PinocchioEndEffectorKinematics &eeKinematics,
         rclcpp_lifecycle::LifecycleNode::SharedPtr &node)
-        : StateEstimatorBase(pinocchioInterface, eeKinematics, node)
+        : StateEstimatorBase(pinocchioInterface, info, eeKinematics, node)
     {
         RCLCPP_INFO(node_->get_logger(), "\033[1;36m====================================================\033[0m");
         RCLCPP_INFO(node_->get_logger(), "\033[1;36m[ 初始化开始 ] 🚀 TopicEstimator\033[0m");
@@ -27,7 +28,7 @@ namespace dog_controllers
         msgReceived_ = true;
     }
 
-    const vector_t &TopicEstimator::estimate(const std::array<LegData, 4> &legsPtr, const ImuData & /*imuData*/, const rclcpp::Duration & /*period*/)
+    const vector_t &TopicEstimator::estimate(const std::array<LegData, 4> &legsPtr, const ImuData & /*imuData*/, const rclcpp::Duration &period)
     {
         if (__builtin_expect(!msgReceived_, 0))
             return results.rbdState_36;
@@ -45,7 +46,7 @@ namespace dog_controllers
         results.rbdState_36.segment<3>(3) << pose.position.x, pose.position.y, pose.position.z;
         results.rbdState_36.segment<3>(18) << twist.angular.x, twist.angular.y, twist.angular.z;
         updateGenericResults(pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z, legsPtr);
-
+        updateObservationFromResults(period);
         return results.rbdState_36;
     }
 

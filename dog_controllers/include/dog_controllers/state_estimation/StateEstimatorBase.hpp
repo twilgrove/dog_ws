@@ -8,6 +8,8 @@
 #include <ocs2_pinocchio_interface/PinocchioInterface.h>
 #include <ocs2_centroidal_model/CentroidalModelInfo.h>
 #include <ocs2_pinocchio_interface/PinocchioEndEffectorKinematics.h>
+#include <ocs2_mpc/SystemObservation.h>
+#include <ocs2_centroidal_model/CentroidalModelRbdConversions.h>
 #include <ocs2_robotic_tools/common/RotationTransforms.h>
 
 namespace dog_controllers
@@ -35,18 +37,22 @@ namespace dog_controllers
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         StateEstimatorBase(
             const PinocchioInterface &pinocchioInterface,
+            const CentroidalModelInfo &info,
             const PinocchioEndEffectorKinematics &eeKinematics,
             rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
         virtual ~StateEstimatorBase() = default;
 
         virtual const vector_t &estimate(const std::array<LegData, 4> &legsPtr, const ImuData &imuData, const rclcpp::Duration &period) = 0;
         EstimatorResults results;
+        SystemObservation currentObservation_;
 
     protected:
-        vector3_t zyxOffset_ = vector3_t::Zero(); // 欧拉角偏移量（用于校准）
+        vector3_t zyxOffset_ = vector3_t::Zero();
+        void updateObservationFromResults(const rclcpp::Duration &period);
 
         PinocchioInterface pinocchioInterface_;
         std::unique_ptr<PinocchioEndEffectorKinematics> eeKinematics_;
+        std::unique_ptr<CentroidalModelRbdConversions> rbdConversions_;
 
         rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
 
