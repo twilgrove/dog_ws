@@ -20,6 +20,7 @@
   <depend>angles</depend>
   <depend>eigen</depend>
   <depend>boost</depend>
+  <depend>nav_msgs</depend>
   <depend>qpoases_vendor</depend>
   <depend>dog_bringup</depend>
   <depend>ament_index_cpp</depend>

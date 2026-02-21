@@ -25,6 +25,7 @@ find_package(sensor_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(nav_msgs REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(qpoases_vendor REQUIRED)
 find_package(angles REQUIRED)
@@ -100,6 +101,7 @@ ament_target_dependencies(
   tf2
   tf2_ros
   tf2_geometry_msgs
+  nav_msgs
   ocs2_core
   ocs2_msgs
   ocs2_robotic_tools

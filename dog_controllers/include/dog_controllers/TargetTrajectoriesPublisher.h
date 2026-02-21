@@ -6,6 +6,7 @@
 #include <tf2_ros/transform_listener.h>
 #include <tf2_ros/buffer.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+#include <nav_msgs/msg/path.hpp>
 
 #include <ocs2_mpc/SystemObservation.h>
 #include <ocs2_ros_interfaces/command/TargetTrajectoriesRosPublisher.h>
@@ -24,6 +25,7 @@ namespace dog_controllers
     explicit TargetTrajectoriesPublisher(const rclcpp::NodeOptions &options);
 
   private:
+    void publishReferencePath(const TargetTrajectories &trajectories);
     TargetTrajectories goalToTargetTrajectories(const vector_t &goal, const SystemObservation &observation);
     TargetTrajectories cmdVelToTargetTrajectories(const vector_t &cmdVel, const SystemObservation &observation);
     TargetTrajectories targetPoseToTargetTrajectories(const vector_t &targetPose, const SystemObservation &observation, const scalar_t &targetReachingTime);
@@ -32,6 +34,7 @@ namespace dog_controllers
     rclcpp::Subscription<ocs2_msgs::msg::MpcObservation>::SharedPtr observationSub_;
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goalSub_;
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmdVelSub_;
+    rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr referencePathPub_;
 
     rclcpp::TimerBase::SharedPtr initTimer_;
     std::unique_ptr<TargetTrajectoriesRosPublisher> targetTrajectoriesPublisher_;

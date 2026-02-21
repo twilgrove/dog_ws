@@ -12,12 +12,11 @@ namespace dog_controllers
   {
     RCLCPP_INFO(this->get_logger(), "\033[1;36m====================================================\033[0m");
     RCLCPP_INFO(this->get_logger(), "\033[1;36m[ 初始化开始 ] 🚀 TargetTrajectoriesPublisher\033[0m");
-    // 1. 获取参数文件路径
+
     std::string pkg_share_path = ament_index_cpp::get_package_share_directory("dog_bringup");
     std::string taskFile = pkg_share_path + "/config/description/task.info";
     std::string referenceFile = pkg_share_path + "/config/description/reference.info";
 
-    // 2. 加载 .info 数据
     loadData::loadCppDataType(referenceFile, "comHeight", COM_HEIGHT_);
     loadData::loadEigenMatrix(referenceFile, "defaultJointState", DEFAULT_JOINT_STATE_);
     loadData::loadCppDataType(referenceFile, "targetRotationVelocity", TARGET_ROTATION_VELOCITY_);
@@ -30,21 +29,20 @@ namespace dog_controllers
     RCLCPP_INFO(this->get_logger(), "\033[1;32m  ├─ 规划角速度限制         : \033[0m%.3f rad/s", TARGET_ROTATION_VELOCITY_);
     RCLCPP_INFO(this->get_logger(), "\033[1;32m  ├─ MPC 预测时域 (Horizon) : \033[0m%.3f s", TIME_TO_TARGET_);
     RCLCPP_INFO(this->get_logger(), "\033[1;32m  └─ 默认关节状态维度       : \033[0m%ld 维向量", DEFAULT_JOINT_STATE_.size());
-    // 3. 初始化 TF2
+
     tfBuffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
     tfListener_ = std::make_shared<tf2_ros::TransformListener>(*tfBuffer_);
 
-    // 4. 初始化 OCS2 发布器
     initTimer_ = this->create_wall_timer(
         std::chrono::milliseconds(1),
         [this]()
         {
           targetTrajectoriesPublisher_ = std::make_unique<TargetTrajectoriesRosPublisher>(
               this->shared_from_this(), topicPrefix);
+          referencePathPub_ = this->create_publisher<nav_msgs::msg::Path>("target_reference_path", 1);
           this->initTimer_->cancel();
         });
 
-    // 5. 订阅 Observation
     observationSub_ = this->create_subscription<ocs2_msgs::msg::MpcObservation>(
         topicPrefix + "_mpc_observation", 1,
         [this](const ocs2_msgs::msg::MpcObservation::SharedPtr msg)
@@ -53,7 +51,6 @@ namespace dog_controllers
           latestObservation_ = ros_msg_conversions::readObservationMsg(*msg);
         });
 
-    // 6. 订阅 Goal
     goalSub_ = this->create_subscription<geometry_msgs::msg::PoseStamped>(
         "/goal_pose", 1,
         [this](const geometry_msgs::msg::PoseStamped::SharedPtr msg)
@@ -87,9 +84,9 @@ namespace dog_controllers
           cmdGoal[5] = rpy.x(); // Roll
           const auto trajectories = goalToTargetTrajectories(cmdGoal, latestObservation_);
           targetTrajectoriesPublisher_->publishTargetTrajectories(trajectories);
+          publishReferencePath(trajectories);
         });
 
-    // 7. 订阅 cmd_vel
     cmdVelSub_ = this->create_subscription<geometry_msgs::msg::Twist>(
         "/cmd_vel", 1,
         [this](const geometry_msgs::msg::Twist::SharedPtr msg)
@@ -167,6 +164,36 @@ namespace dog_controllers
     return trajectories;
   }
 
+  void TargetTrajectoriesPublisher::publishReferencePath(const TargetTrajectories &trajectories)
+  {
+    if (trajectories.stateTrajectory.empty())
+      return;
+
+    nav_msgs::msg::Path path;
+    path.header.frame_id = "odom";
+    path.header.stamp = this->get_clock()->now();
+
+    const vector_t &startState = trajectories.stateTrajectory.front();
+    const vector_t &endState = trajectories.stateTrajectory.back();
+
+    int numPoints = 20;
+    for (int i = 0; i <= numPoints; ++i)
+    {
+      double alpha = static_cast<double>(i) / numPoints;
+
+      geometry_msgs::msg::PoseStamped pose;
+      pose.header = path.header;
+      pose.pose.position.x = (1.0 - alpha) * startState(6) + alpha * endState(6);
+      pose.pose.position.y = (1.0 - alpha) * startState(7) + alpha * endState(7);
+      pose.pose.position.z = (1.0 - alpha) * startState(8) + alpha * endState(8);
+
+      pose.pose.orientation.w = 1.0;
+
+      path.poses.push_back(pose);
+    }
+
+    referencePathPub_->publish(path);
+  }
 }
 
 #include <rclcpp_components/register_node_macro.hpp>
