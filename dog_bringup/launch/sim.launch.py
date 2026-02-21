@@ -2,10 +2,11 @@ import os
 from ament_index_python.packages import get_package_share_directory
 
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, RegisterEventHandler
-from launch.event_handlers import OnProcessExit
+from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
+from launch_ros.actions import Node, ComposableNodeContainer
+from launch_ros.descriptions import ComposableNode
 from launch_ros.parameter_descriptions import ParameterValue
 from launch.substitutions import Command
 from launch.actions import ExecuteProcess
@@ -41,20 +42,6 @@ def generate_launch_description():
         launch_arguments=[("world", world_file), ("verbose", "true")],
     )
 
-    robot_state_publisher = Node(
-        package="robot_state_publisher",
-        executable="robot_state_publisher",
-        name="robot_state_publisher",
-        output="screen",
-        parameters=[
-            {
-                "robot_description": ParameterValue(
-                    Command(["xacro ", xacro_file]), value_type=str
-                )
-            }
-        ],
-    )
-
     spawn_entity = Node(
         package="gazebo_ros",
         executable="spawn_entity.py",
@@ -76,6 +63,7 @@ def generate_launch_description():
         ],
         output="screen",
     )
+
     controller = Node(
         package="controller_manager",
         executable="spawner",
@@ -88,28 +76,42 @@ def generate_launch_description():
         arguments=["joint_state_broadcaster"],
     )
 
-    load_effort_controller = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=["effort_controller"],
-    )
-
-    load_imu_broadcaster = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=["imu_sensor_broadcaster"],
+    dog_controller_container = ComposableNodeContainer(
+        name="dog_controller_container",
+        namespace="",
+        package="rclcpp_components",
+        executable="component_container",
+        composable_node_descriptions=[
+            ComposableNode(
+                package="dog_controllers",
+                plugin="dog_controllers::TargetTrajectoriesPublisher",
+                name="target_trajectories_publisher",
+            ),
+            ComposableNode(
+                package="robot_state_publisher",
+                plugin="robot_state_publisher::RobotStatePublisher",
+                name="robot_state_publisher",
+                parameters=[
+                    {
+                        "robot_description": ParameterValue(
+                            Command(["xacro ", xacro_file]), value_type=str
+                        )
+                    }
+                ],
+            ),
+        ],
+        output="screen",
     )
 
     ld = LaunchDescription()
 
     ld.add_action(generate_urdf)
     ld.add_action(gazebo)
-    ld.add_action(robot_state_publisher)
     ld.add_action(spawn_entity)
 
     ld.add_action(load_joint_state_broadcaster)
-    # ld.add_action(load_effort_controller)
     ld.add_action(controller)
-    ld.add_action(load_imu_broadcaster)
+
+    ld.add_action(dog_controller_container)
 
     return ld

@@ -87,8 +87,34 @@ ament_target_dependencies(
 pluginlib_export_plugin_description_file(controller_interface
                                          dog_controllers.xml)
 
+# topic发布器
+add_library(target_trajectories_component SHARED
+            src/TargetTrajectoriesPublisher.cpp)
+target_include_directories(target_trajectories_component
+                           PUBLIC include/dog_controllers)
+ament_target_dependencies(
+  target_trajectories_component
+  rclcpp
+  rclcpp_components
+  geometry_msgs
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
+  ocs2_core
+  ocs2_msgs
+  ocs2_robotic_tools
+  ocs2_ros_interfaces
+  Eigen3
+  ament_index_cpp)
+rclcpp_components_register_nodes(target_trajectories_component
+                                 "dog_controllers::TargetTrajectoriesPublisher")
 # 安装规则
-install(TARGETS dog_nmpc_wbc_controller DESTINATION lib)
 install(FILES dog_controllers.xml DESTINATION share/${PROJECT_NAME})
+install(DIRECTORY include/ DESTINATION include)
+install(
+  TARGETS target_trajectories_component dog_nmpc_wbc_controller
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin)
 
 ament_package()

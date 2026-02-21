@@ -33,6 +33,7 @@ namespace dog_controllers
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goalSub_;
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmdVelSub_;
 
+    rclcpp::TimerBase::SharedPtr initTimer_;
     std::unique_ptr<TargetTrajectoriesRosPublisher> targetTrajectoriesPublisher_;
 
     std::shared_ptr<tf2_ros::Buffer> tfBuffer_;
@@ -41,6 +42,7 @@ namespace dog_controllers
     std::mutex latestObservationMutex_;
     SystemObservation latestObservation_;
 
+    std::string topicPrefix = "dog_robot";
     scalar_t TARGET_DISPLACEMENT_VELOCITY_;
     scalar_t TARGET_ROTATION_VELOCITY_;
     scalar_t COM_HEIGHT_;
