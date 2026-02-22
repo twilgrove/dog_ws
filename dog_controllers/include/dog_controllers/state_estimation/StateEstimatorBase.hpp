@@ -4,7 +4,7 @@
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
 #include "common/dog_data_bridge.hpp"
 #include <ocs2_core/Types.h>
-#include <ocs2_legged_robot/common/Types.h>
+#include <nmpc_ocs2_legged_robot/common/Types.h>
 #include <ocs2_pinocchio_interface/PinocchioInterface.h>
 #include <ocs2_centroidal_model/CentroidalModelInfo.h>
 #include <ocs2_pinocchio_interface/PinocchioEndEffectorKinematics.h>

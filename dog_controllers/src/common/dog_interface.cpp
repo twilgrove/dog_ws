@@ -8,7 +8,7 @@
 #include <pinocchio/algorithm/jacobian.hpp>
 #include <pinocchio/algorithm/kinematics.hpp>
 
-#include "ocs2_legged_robot/LeggedRobotInterface.h"
+#include "nmpc_ocs2_legged_robot/LeggedRobotInterface.h"
 
 #include <ocs2_centroidal_model/AccessHelperFunctions.h>
 #include <ocs2_centroidal_model/CentroidalModelPinocchioMapping.h>
@@ -18,13 +18,13 @@
 #include <ocs2_oc/synchronized_module/SolverSynchronizedModule.h>
 #include <ocs2_pinocchio_interface/PinocchioEndEffectorKinematicsCppAd.h>
 
-#include "ocs2_legged_robot/LeggedRobotPreComputation.h"
-#include "ocs2_legged_robot/constraint/FrictionConeConstraint.h"
-#include "ocs2_legged_robot/constraint/NormalVelocityConstraintCppAd.h"
-#include "ocs2_legged_robot/constraint/ZeroForceConstraint.h"
-#include "ocs2_legged_robot/constraint/ZeroVelocityConstraintCppAd.h"
-#include "ocs2_legged_robot/cost/LeggedRobotQuadraticTrackingCost.h"
-#include "ocs2_legged_robot/dynamics/LeggedRobotDynamicsAD.h"
+#include "nmpc_ocs2_legged_robot/LeggedRobotPreComputation.h"
+#include "nmpc_ocs2_legged_robot/constraint/FrictionConeConstraint.h"
+#include "nmpc_ocs2_legged_robot/constraint/NormalVelocityConstraintCppAd.h"
+#include "nmpc_ocs2_legged_robot/constraint/ZeroForceConstraint.h"
+#include "nmpc_ocs2_legged_robot/constraint/ZeroVelocityConstraintCppAd.h"
+#include "nmpc_ocs2_legged_robot/cost/LeggedRobotQuadraticTrackingCost.h"
+#include "nmpc_ocs2_legged_robot/dynamics/LeggedRobotDynamicsAD.h"
 
 namespace dog_controllers
 {

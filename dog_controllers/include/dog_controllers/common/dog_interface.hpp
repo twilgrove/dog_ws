@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ocs2_legged_robot/LeggedRobotInterface.h>
+#include <nmpc_ocs2_legged_robot/LeggedRobotInterface.h>
 #include <ocs2_pinocchio_interface/PinocchioEndEffectorKinematics.h>
 namespace dog_controllers
 {

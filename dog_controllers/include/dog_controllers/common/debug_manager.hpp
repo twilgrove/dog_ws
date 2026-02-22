@@ -7,7 +7,7 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
-#include <ocs2_legged_robot_ros/visualization/LeggedRobotVisualizer.h>
+#include <nmpc_ocs2_legged_robot/visualization/LeggedRobotVisualizer.h>
 #include <ocs2_mpc/SystemObservation.h>
 #include <ocs2_oc/oc_data/PrimalSolution.h>
 #include <ocs2_mpc/CommandData.h>

@@ -5,12 +5,12 @@
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
 #include "wbc/Task.h"
 #include <ocs2_core/Types.h>
-#include <ocs2_legged_robot/common/Types.h>
+#include <nmpc_ocs2_legged_robot/common/Types.h>
 #include <ocs2_centroidal_model/CentroidalModelInfo.h>
 #include <ocs2_centroidal_model/CentroidalModelPinocchioMapping.h>
 #include <ocs2_pinocchio_interface/PinocchioInterface.h>
 #include <ocs2_pinocchio_interface/PinocchioEndEffectorKinematics.h>
-#include <ocs2_legged_robot/gait/MotionPhaseDefinition.h>
+#include <nmpc_ocs2_legged_robot/gait/MotionPhaseDefinition.h>
 namespace dog_controllers
 {
     using namespace ocs2;

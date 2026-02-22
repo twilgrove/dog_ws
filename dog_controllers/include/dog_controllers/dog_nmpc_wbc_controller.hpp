@@ -3,7 +3,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include <ament_index_cpp/get_package_share_directory.hpp>
-#include <ocs2_legged_robot/LeggedRobotInterface.h>
+#include <nmpc_ocs2_legged_robot/LeggedRobotInterface.h>
 
 #include "common/dog_data_bridge.hpp"
 #include "common/dog_interface.hpp"

@@ -3,27 +3,43 @@
 <package format="3">
   <name>dog_controllers</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>MPC based controllers for quadruped robot</description>
   <maintainer email="2388995069@qq.com">cys</maintainer>
-  <license>TODO: License declaration</license>
+  <license>BSD-3-Clause</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>rclcpp</depend>
+  <depend>rclcpp_components</depend>
   <depend>pluginlib</depend>
+  <depend>tf2_ros</depend>
+  <depend>nav_msgs</depend>
+  <depend>ament_index_cpp</depend>
+  <depend>robot_state_publisher</depend>
+  
   <depend>controller_interface</depend>
   <depend>hardware_interface</depend>
+
+  <depend>ocs2_core</depend>
+  <depend>ocs2_oc</depend>
+  <depend>ocs2_ddp</depend>
+  <depend>ocs2_mpc</depend>
+  <depend>ocs2_sqp</depend>
+  <depend>ocs2_ipm</depend>
+  <depend>ocs2_msgs</depend>
   <depend>ocs2_pinocchio_interface</depend>
   <depend>ocs2_robotic_tools</depend>
-  <depend>dog_common</depend>
-  <depend>tf2_ros</depend>
-  <depend>angles</depend>
+  <depend>ocs2_centroidal_model</depend>
+  <depend>ocs2_robotic_assets</depend>
+
+  <depend>pinocchio</depend>
   <depend>eigen</depend>
   <depend>boost</depend>
-  <depend>nav_msgs</depend>
   <depend>qpoases_vendor</depend>
+  <depend>angles</depend>
+
+  <depend>dog_common</depend>
   <depend>dog_bringup</depend>
-  <depend>ament_index_cpp</depend>
 
   <build_depend>rosidl_default_generators</build_depend>
   <exec_depend>rosidl_default_runtime</exec_depend>
@@ -31,9 +47,6 @@
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
 
-  <build_depend>rclcpp_components</build_depend>
-  <exec_depend>rclcpp_components</exec_depend>
-  
   <export>
     <build_type>ament_cmake</build_type>
   </export>

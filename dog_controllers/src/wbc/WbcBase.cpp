@@ -8,7 +8,7 @@
 #include <pinocchio/algorithm/frames.hpp>
 #include <pinocchio/algorithm/rnea.hpp>
 #include <utility>
-#include <ocs2_legged_robot/gait/MotionPhaseDefinition.h>
+#include <nmpc_ocs2_legged_robot/gait/MotionPhaseDefinition.h>
 namespace dog_controllers
 {
     WbcBase::WbcBase(
@@ -21,8 +21,8 @@ namespace dog_controllers
           pinocchioInterfaceMeasured_(pinocchioInterface),
           pinocchioInterfaceDesired_(pinocchioInterface),
           eeKinematics_(eeKinematics.clone()),
-          node_(node),
-          inputLast_(vector_t::Zero(info_.inputDim))
+          inputLast_(vector_t::Zero(info_.inputDim)),
+          node_(node)
 
     {
         // 决策变量数量 = 18 + 3*4 + 12 = 42
