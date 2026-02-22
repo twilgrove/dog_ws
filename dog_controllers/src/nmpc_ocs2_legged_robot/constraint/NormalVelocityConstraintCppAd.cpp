@@ -36,8 +36,6 @@ namespace ocs2
   {
 
     /******************************************************************************************************/
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     NormalVelocityConstraintCppAd::NormalVelocityConstraintCppAd(const SwitchedModelReferenceManager &referenceManager,
                                                                  const EndEffectorKinematics<scalar_t> &endEffectorKinematics,
                                                                  size_t contactPointIndex)
@@ -47,8 +45,6 @@ namespace ocs2
           contactPointIndex_(contactPointIndex) {}
 
     /******************************************************************************************************/
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     NormalVelocityConstraintCppAd::NormalVelocityConstraintCppAd(const NormalVelocityConstraintCppAd &rhs)
         : StateInputConstraint(rhs),
           referenceManagerPtr_(rhs.referenceManagerPtr_),
@@ -56,15 +52,11 @@ namespace ocs2
           contactPointIndex_(rhs.contactPointIndex_) {}
 
     /******************************************************************************************************/
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     bool NormalVelocityConstraintCppAd::isActive(scalar_t time) const
     {
       return !referenceManagerPtr_->getContactFlags(time)[contactPointIndex_];
     }
 
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     /******************************************************************************************************/
     vector_t NormalVelocityConstraintCppAd::getValue(scalar_t time, const vector_t &state, const vector_t &input,
                                                      const PreComputation &preComp) const
@@ -75,8 +67,6 @@ namespace ocs2
       return eeLinearConstraintPtr_->getValue(time, state, input, preComp);
     }
 
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     /******************************************************************************************************/
     VectorFunctionLinearApproximation NormalVelocityConstraintCppAd::getLinearApproximation(scalar_t time, const vector_t &state,
                                                                                             const vector_t &input,

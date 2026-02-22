@@ -59,18 +59,19 @@ find_package(dog_bringup REQUIRED)
 
 # 控制插件
 file(GLOB_RECURSE NMPC_SOURCES CONFIGURE_DEPENDS
-     "src/nmpc_ocs2_legged_robot/**/*")
+     "src/nmpc_ocs2_legged_robot/**/*" "src/nmpc_ocs2_legged_robot/*")
+
 add_library(
   dog_nmpc_wbc_controller SHARED
   src/dog_nmpc_wbc_controller.cpp
   src/common/dog_data_bridge.cpp
   src/common/debug_manager.cpp
-  src/common/dog_interface.cpp
   src/state_estimation/StateEstimatorBase.cpp
   src/state_estimation/TopicStateEstimator.cpp
   src/state_estimation/KalmanFilterEstimator.cpp
   src/wbc/WbcBase.cpp
-  src/wbc/WeightedWbc.cpp)
+  src/wbc/WeightedWbc.cpp
+  ${NMPC_SOURCES})
 
 target_include_directories(
   dog_nmpc_wbc_controller

@@ -35,16 +35,12 @@ namespace ocs2
   {
 
     /******************************************************************************************************/
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     SwitchedModelReferenceManager::SwitchedModelReferenceManager(std::shared_ptr<GaitSchedule> gaitSchedulePtr,
                                                                  std::shared_ptr<SwingTrajectoryPlanner> swingTrajectoryPtr)
         : ReferenceManager(TargetTrajectories(), ModeSchedule()),
           gaitSchedulePtr_(std::move(gaitSchedulePtr)),
           swingTrajectoryPtr_(std::move(swingTrajectoryPtr)) {}
 
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     /******************************************************************************************************/
     void SwitchedModelReferenceManager::setModeSchedule(const ModeSchedule &modeSchedule)
     {
@@ -53,15 +49,11 @@ namespace ocs2
     }
 
     /******************************************************************************************************/
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     contact_flag_t SwitchedModelReferenceManager::getContactFlags(scalar_t time) const
     {
       return modeNumber2StanceLeg(this->getModeSchedule().modeAtTime(time));
     }
 
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     /******************************************************************************************************/
     void SwitchedModelReferenceManager::modifyReferences(scalar_t initTime, scalar_t finalTime, const vector_t &initState,
                                                          TargetTrajectories &targetTrajectories, ModeSchedule &modeSchedule)

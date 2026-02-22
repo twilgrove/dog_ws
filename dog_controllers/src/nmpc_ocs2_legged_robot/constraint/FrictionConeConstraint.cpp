@@ -37,8 +37,6 @@ namespace ocs2
   {
 
     /******************************************************************************************************/
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     FrictionConeConstraint::FrictionConeConstraint(const SwitchedModelReferenceManager &referenceManager, Config config,
                                                    size_t contactPointIndex, CentroidalModelInfo info)
         : StateInputConstraint(ConstraintOrder::Quadratic),
@@ -48,8 +46,6 @@ namespace ocs2
           info_(std::move(info)) {}
 
     /******************************************************************************************************/
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     void FrictionConeConstraint::setSurfaceNormalInWorld(const vector3_t &surfaceNormalInWorld)
     {
       t_R_w.setIdentity();
@@ -57,15 +53,11 @@ namespace ocs2
     }
 
     /******************************************************************************************************/
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     bool FrictionConeConstraint::isActive(scalar_t time) const
     {
       return referenceManagerPtr_->getContactFlags(time)[contactPointIndex_];
     }
 
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     /******************************************************************************************************/
     vector_t FrictionConeConstraint::getValue(scalar_t time, const vector_t &state, const vector_t &input,
                                               const PreComputation &preComp) const
@@ -75,8 +67,6 @@ namespace ocs2
       return coneConstraint(localForce);
     }
 
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     /******************************************************************************************************/
     VectorFunctionLinearApproximation FrictionConeConstraint::getLinearApproximation(scalar_t time, const vector_t &state,
                                                                                      const vector_t &input,
@@ -96,8 +86,6 @@ namespace ocs2
       return linearApproximation;
     }
 
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     /******************************************************************************************************/
     VectorFunctionQuadraticApproximation FrictionConeConstraint::getQuadraticApproximation(scalar_t time, const vector_t &state,
                                                                                            const vector_t &input,
@@ -121,8 +109,6 @@ namespace ocs2
     }
 
     /******************************************************************************************************/
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     FrictionConeConstraint::LocalForceDerivatives FrictionConeConstraint::computeLocalForceDerivatives(
         const vector3_t &forcesInWorldFrame) const
     {
@@ -131,8 +117,6 @@ namespace ocs2
       return localForceDerivatives;
     }
 
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     /******************************************************************************************************/
     FrictionConeConstraint::ConeLocalDerivatives FrictionConeConstraint::computeConeLocalDerivatives(const vector3_t &localForces) const
     {
@@ -161,8 +145,6 @@ namespace ocs2
     }
 
     /******************************************************************************************************/
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     vector_t FrictionConeConstraint::coneConstraint(const vector3_t &localForces) const
     {
       const auto F_tangent_square = localForces.x() * localForces.x() + localForces.y() * localForces.y() + config_.regularization;
@@ -171,8 +153,6 @@ namespace ocs2
       return (vector_t(1) << coneConstraint).finished();
     }
 
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     /******************************************************************************************************/
     FrictionConeConstraint::ConeDerivatives FrictionConeConstraint::computeConeConstraintDerivatives(
         const ConeLocalDerivatives &coneLocalDerivatives, const LocalForceDerivatives &localForceDerivatives) const
@@ -189,8 +169,6 @@ namespace ocs2
     }
 
     /******************************************************************************************************/
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     matrix_t FrictionConeConstraint::frictionConeInputDerivative(size_t inputDim, const ConeDerivatives &coneDerivatives) const
     {
       matrix_t dhdu = matrix_t::Zero(1, inputDim);
@@ -198,8 +176,6 @@ namespace ocs2
       return dhdu;
     }
 
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     /******************************************************************************************************/
     matrix_t FrictionConeConstraint::frictionConeSecondDerivativeInput(size_t inputDim, const ConeDerivatives &coneDerivatives) const
     {
@@ -209,8 +185,6 @@ namespace ocs2
       return ddhdudu;
     }
 
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     /******************************************************************************************************/
     matrix_t FrictionConeConstraint::frictionConeSecondDerivativeState(size_t stateDim, const ConeDerivatives &coneDerivatives) const
     {

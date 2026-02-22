@@ -35,15 +35,11 @@ namespace ocs2
   {
 
     /******************************************************************************************************/
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     GaitSchedule::GaitSchedule(ModeSchedule initModeSchedule, ModeSequenceTemplate initModeSequenceTemplate, scalar_t phaseTransitionStanceTime)
         : modeSchedule_(std::move(initModeSchedule)),
           modeSequenceTemplate_(std::move(initModeSequenceTemplate)),
           phaseTransitionStanceTime_(phaseTransitionStanceTime) {}
 
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     /******************************************************************************************************/
     void GaitSchedule::insertModeSequenceTemplate(const ModeSequenceTemplate &modeSequenceTemplate, scalar_t startTime, scalar_t finalTime)
     {
@@ -79,8 +75,6 @@ namespace ocs2
     }
 
     /******************************************************************************************************/
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     ModeSchedule GaitSchedule::getModeSchedule(scalar_t lowerBoundTime, scalar_t upperBoundTime)
     {
       auto &eventTimes = modeSchedule_.eventTimes;
@@ -109,8 +103,6 @@ namespace ocs2
       return modeSchedule_;
     }
 
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     /******************************************************************************************************/
     void GaitSchedule::tileModeSequenceTemplate(scalar_t startTime, scalar_t finalTime)
     {

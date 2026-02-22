@@ -35,39 +35,39 @@ namespace dog_controllers
     {
         state_estimator_ = std::make_unique<KalmanFilterEstimator>(
             taskFile,
-            dog_interface_->getPinocchioInterface(),
-            dog_interface_->getCentroidalModelInfo(),
-            dog_interface_->getEndEffectorKinematics(), node_);
+            robot_interface_->getPinocchioInterface(),
+            robot_interface_->getCentroidalModelInfo(),
+            robot_interface_->getEndEffectorKinematics(), node_);
     }
     void DogNmpcWbcController_God::init_real_or_god()
     {
         state_estimator_ = std::make_unique<TopicEstimator>(
-            dog_interface_->getPinocchioInterface(),
-            dog_interface_->getCentroidalModelInfo(),
-            dog_interface_->getEndEffectorKinematics(), node_);
+            robot_interface_->getPinocchioInterface(),
+            robot_interface_->getCentroidalModelInfo(),
+            robot_interface_->getEndEffectorKinematics(), node_);
     }
 
     CallbackReturn DogNmpcWbcController::on_activate(const rclcpp_lifecycle::State &)
     {
         bridge_ = std::make_unique<DogDataBridge>(state_interfaces_, command_interfaces_, node_);
 
-        dog_interface_ = std::make_unique<DogInterface>(taskFile, urdfFile, referenceFile);
+        robot_interface_ = std::make_unique<LeggedRobotInterface>(taskFile, urdfFile, referenceFile);
 
         init_real_or_god();
 
         debug_manager_ = std::make_unique<DebugManager>(
             &(bridge_->imu),
             &(state_estimator_->results),
-            dog_interface_->getPinocchioInterface(),
-            dog_interface_->getCentroidalModelInfo(),
-            dog_interface_->getEndEffectorKinematics(),
+            robot_interface_->getPinocchioInterface(),
+            robot_interface_->getCentroidalModelInfo(),
+            robot_interface_->getEndEffectorKinematics(),
             node_);
 
         wbc_ = std::make_unique<WeightedWbc>(
             taskFile,
-            dog_interface_->getPinocchioInterface(),
-            dog_interface_->getCentroidalModelInfo(),
-            dog_interface_->getEndEffectorKinematics(),
+            robot_interface_->getPinocchioInterface(),
+            robot_interface_->getCentroidalModelInfo(),
+            robot_interface_->getEndEffectorKinematics(),
             node_);
 
         return CallbackReturn::SUCCESS;

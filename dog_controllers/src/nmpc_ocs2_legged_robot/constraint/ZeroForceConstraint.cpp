@@ -37,8 +37,6 @@ namespace ocs2
   {
 
     /******************************************************************************************************/
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     ZeroForceConstraint::ZeroForceConstraint(const SwitchedModelReferenceManager &referenceManager, size_t contactPointIndex,
                                              CentroidalModelInfo info)
         : StateInputConstraint(ConstraintOrder::Linear),
@@ -47,23 +45,17 @@ namespace ocs2
           info_(std::move(info)) {}
 
     /******************************************************************************************************/
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     bool ZeroForceConstraint::isActive(scalar_t time) const
     {
       return !referenceManagerPtr_->getContactFlags(time)[contactPointIndex_];
     }
 
     /******************************************************************************************************/
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     vector_t ZeroForceConstraint::getValue(scalar_t time, const vector_t &state, const vector_t &input, const PreComputation &preComp) const
     {
       return centroidal_model::getContactForces(input, contactPointIndex_, info_);
     }
 
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     /******************************************************************************************************/
     VectorFunctionLinearApproximation ZeroForceConstraint::getLinearApproximation(scalar_t time, const vector_t &state, const vector_t &input,
                                                                                   const PreComputation &preComp) const

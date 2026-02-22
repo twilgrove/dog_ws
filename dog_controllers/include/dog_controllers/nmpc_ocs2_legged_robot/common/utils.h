@@ -45,8 +45,6 @@ namespace ocs2
   {
 
     /******************************************************************************************************/
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     /** Counts contact feet */
     inline size_t numberOfClosedContacts(const contact_flag_t &contactFlags)
     {
@@ -61,8 +59,6 @@ namespace ocs2
       return numStanceLegs;
     }
 
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     /******************************************************************************************************/
     /** Computes an input with zero joint velocity and forces which equally distribute the robot weight between contact feet. */
     inline vector_t weightCompensatingInput(const CentroidalModelInfoTpl<scalar_t> &info, const contact_flag_t &contactFlags)

@@ -35,8 +35,6 @@ namespace ocs2
   {
 
     /******************************************************************************************************/
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     EndEffectorLinearConstraint::EndEffectorLinearConstraint(const EndEffectorKinematics<scalar_t> &endEffectorKinematics,
                                                              size_t numConstraints, Config config)
         : StateInputConstraint(ConstraintOrder::Linear),
@@ -51,16 +49,12 @@ namespace ocs2
     }
 
     /******************************************************************************************************/
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     EndEffectorLinearConstraint::EndEffectorLinearConstraint(const EndEffectorLinearConstraint &rhs)
         : StateInputConstraint(rhs),
           endEffectorKinematicsPtr_(rhs.endEffectorKinematicsPtr_->clone()),
           numConstraints_(rhs.numConstraints_),
           config_(rhs.config_) {}
 
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     /******************************************************************************************************/
     void EndEffectorLinearConstraint::configure(Config &&config)
     {
@@ -73,8 +67,6 @@ namespace ocs2
       config_ = std::move(config);
     }
 
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     /******************************************************************************************************/
     vector_t EndEffectorLinearConstraint::getValue(scalar_t time, const vector_t &state, const vector_t &input,
                                                    const PreComputation &preComp) const
@@ -91,8 +83,6 @@ namespace ocs2
       return f;
     }
 
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     /******************************************************************************************************/
     VectorFunctionLinearApproximation EndEffectorLinearConstraint::getLinearApproximation(scalar_t time, const vector_t &state,
                                                                                           const vector_t &input,

@@ -6,13 +6,13 @@
 #include <nmpc_ocs2_legged_robot/LeggedRobotInterface.h>
 
 #include "common/dog_data_bridge.hpp"
-#include "common/dog_interface.hpp"
 #include "common/debug_manager.hpp"
 #include "state_estimation/KalmanFilterEstimator.hpp"
 #include "state_estimation/StateEstimatorBase.hpp"
 #include "state_estimation/TopicStateEstimator.hpp"
 #include "wbc/WbcBase.hpp"
 #include "wbc/WeightedWbc.hpp"
+#include "nmpc_ocs2_legged_robot/LeggedRobotInterface.h"
 
 namespace dog_controllers
 {
@@ -36,7 +36,7 @@ namespace dog_controllers
     protected:
         std::unique_ptr<DogDataBridge> bridge_;
         std::unique_ptr<DebugManager> debug_manager_;
-        std::unique_ptr<DogInterface> dog_interface_;
+        std::unique_ptr<LeggedRobotInterface> robot_interface_;
         std::unique_ptr<StateEstimatorBase> state_estimator_;
         std::unique_ptr<WbcBase> wbc_;
 

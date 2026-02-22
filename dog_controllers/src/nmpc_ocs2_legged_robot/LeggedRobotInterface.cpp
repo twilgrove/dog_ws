@@ -30,6 +30,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include <string>
 
+#include <rclcpp/rclcpp.hpp>
+
 #include <pinocchio/fwd.hpp> // forward declarations must be included first.
 
 #include <pinocchio/algorithm/frames.hpp>
@@ -64,55 +66,17 @@ namespace ocs2
   {
 
     /******************************************************************************************************/
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     LeggedRobotInterface::LeggedRobotInterface(const std::string &taskFile,
                                                const std::string &urdfFile,
                                                const std::string &referenceFile,
                                                bool useHardFrictionConeConstraint)
         : useHardFrictionConeConstraint_(useHardFrictionConeConstraint)
     {
-      // check that task file exists
-      boost::filesystem::path taskFilePath(taskFile);
-      if (boost::filesystem::exists(taskFilePath))
-      {
-        std::cerr << "[LeggedRobotInterface] Loading task file: " << taskFilePath
-                  << std::endl;
-      }
-      else
-      {
-        throw std::invalid_argument("[LeggedRobotInterface] Task file not found: " +
-                                    taskFilePath.string());
-      }
-      // check that urdf file exists
-      boost::filesystem::path urdfFilePath(urdfFile);
-      if (boost::filesystem::exists(urdfFilePath))
-      {
-        std::cerr << "[LeggedRobotInterface] Loading Pinocchio model from: "
-                  << urdfFilePath << std::endl;
-      }
-      else
-      {
-        throw std::invalid_argument("[LeggedRobotInterface] URDF file not found: " +
-                                    urdfFilePath.string());
-      }
-      // check that targetCommand file exists
-      boost::filesystem::path referenceFilePath(referenceFile);
-      if (boost::filesystem::exists(referenceFilePath))
-      {
-        std::cerr << "[LeggedRobotInterface] Loading target command settings from: "
-                  << referenceFilePath << std::endl;
-      }
-      else
-      {
-        throw std::invalid_argument(
-            "[LeggedRobotInterface] targetCommand file not found: " +
-            referenceFilePath.string());
-      }
+      RCLCPP_INFO(rclcpp::get_logger("DogNmpcWbcController"), "\033[1;36m====================================================\033[0m");
+      RCLCPP_INFO(rclcpp::get_logger("DogNmpcWbcController"), "\033[1;36m[ 初始化开始 ] 🚀 LeggedRobotInterface\033[0m");
 
       bool verbose;
-      loadData::loadCppDataType(taskFile, "legged_robot_interface.verbose",
-                                verbose);
+      loadData::loadCppDataType(taskFile, "legged_robot_interface.verbose", verbose);
 
       // load setting from loading file
       modelSettings_ = loadModelSettings(taskFile, "model_settings", verbose);
@@ -122,108 +86,135 @@ namespace ocs2
       ipmSettings_ = ipm::loadSettings(taskFile, "ipm", verbose);
       rolloutSettings_ = rollout::loadSettings(taskFile, "rollout", verbose);
 
-      // OptimalConrolProblem
-      setupOptimalConrolProblem(taskFile, urdfFile, referenceFile, verbose);
+      // OptimalControlProblem
+      setupOptimalControlProblem(taskFile, urdfFile, referenceFile, verbose);
 
       // initial state
       initialState_.setZero(centroidalModelInfo_.stateDim);
       loadData::loadEigenMatrix(taskFile, "initialState", initialState_);
+
+      RCLCPP_INFO(rclcpp::get_logger("DogNmpcWbcController"), "\033[1;32m[ 初始化完成 ] ✅ LeggedRobotInterface\033[0m");
+      RCLCPP_INFO(rclcpp::get_logger("DogNmpcWbcController"), "\033[1;32m====================================================\033[0m");
     }
 
     /******************************************************************************************************/
-    /******************************************************************************************************/
-    /******************************************************************************************************/
-    void LeggedRobotInterface::setupOptimalConrolProblem(
+    void LeggedRobotInterface::setupOptimalControlProblem(
         const std::string &taskFile,
         const std::string &urdfFile,
         const std::string &referenceFile,
         bool verbose)
     {
-      // PinocchioInterface
-      pinocchioInterfacePtr_.reset(
-          new PinocchioInterface(centroidal_model::createPinocchioInterface(
-              urdfFile, modelSettings_.jointNames)));
+      // ===========================================================================
+      // 1. 【物理引擎模块】初始化 Pinocchio 接口
+      // 作用：加载 URDF 模型，建立机器人的运动学树结构，它是所有动力学计算的基础。
+      // ===========================================================================
+      pinocchioInterfacePtr_ = std::make_unique<ocs2::PinocchioInterface>(
+          ocs2::centroidal_model::createPinocchioInterface(urdfFile, modelSettings_.jointNames));
 
-      // CentroidalModelInfo
+      // ===========================================================================
+      // 2. 【数学模型模块】创建质心模型信息 (Centroidal Model Info)
+      // 作用：定义机器人的状态维度（位置、姿态、动量）和输入维度（足端力）。
+      // 它决定了 MPC 求解时的矩阵大小。
+      // ===========================================================================
       centroidalModelInfo_ = centroidal_model::createCentroidalModelInfo(
-          *pinocchioInterfacePtr_, centroidal_model::loadCentroidalType(taskFile),
-          centroidal_model::loadDefaultJointState(
-              pinocchioInterfacePtr_->getModel().nq - 6, referenceFile),
-          modelSettings_.contactNames3DoF, modelSettings_.contactNames6DoF);
+          *pinocchioInterfacePtr_,
+          centroidal_model::loadCentroidalType(taskFile),
+          centroidal_model::loadDefaultJointState(pinocchioInterfacePtr_->getModel().nq - 6, referenceFile),
+          modelSettings_.contactNames3DoF,
+          modelSettings_.contactNames6DoF);
 
-      // Swing trajectory planner
+      // ===========================================================================
+      // 3. 【运动学模块】末端执行器（足端）运动学句柄
+      // 作用：用于计算足端在空间中的位置和雅可比矩阵，主要用于后续的约束计算。
+      // ===========================================================================
+      eeKinematicsPtrs_ = std::make_unique<ocs2::PinocchioEndEffectorKinematics>(
+          *pinocchioInterfacePtr_,
+          ocs2::CentroidalModelPinocchioMapping(centroidalModelInfo_),
+          modelSettings_.contactNames3DoF);
+
+      // ===========================================================================
+      // 4. 【任务规划模块】摆动腿轨迹规划与步态管理器
+      // 作用：SwingTrajectoryPlanner 负责算脚抬多高；ReferenceManager 负责管什么时候迈哪只脚。
+      // ===========================================================================
       auto swingTrajectoryPlanner = std::make_unique<SwingTrajectoryPlanner>(
-          loadSwingTrajectorySettings(taskFile, "swing_trajectory_config", verbose),
-          4);
+          loadSwingTrajectorySettings(taskFile, "swing_trajectory_config", verbose), 4);
 
-      // Mode schedule manager
       referenceManagerPtr_ = std::make_shared<SwitchedModelReferenceManager>(
           loadGaitSchedule(referenceFile, verbose),
           std::move(swingTrajectoryPlanner));
 
-      // Optimal control problem
+      // ===========================================================================
+      // 5. 【容器初始化】创建 OCP（最优控制问题）对象
+      // 作用：这是所有 Cost（代价）和 Constraints（约束）的“篮子”。
+      // ===========================================================================
       problemPtr_.reset(new OptimalControlProblem);
 
-      // Dynamics
+      // ===========================================================================
+      // 6. 【动力学模块】系统动力学定义 (AD 自动微分版)
+      // 作用：告诉 MPC 机器人运动遵循的物理规律（F=ma）。
+      // 这里使用了 CppAD 自动求导，免去了手写导数矩阵的痛苦。
+      // ===========================================================================
       bool useAnalyticalGradientsDynamics = false;
       loadData::loadCppDataType(
-          taskFile, "legged_robot_interface.useAnalyticalGradientsDynamics",
+          taskFile,
+          "legged_robot_interface.useAnalyticalGradientsDynamics",
           useAnalyticalGradientsDynamics);
       std::unique_ptr<SystemDynamicsBase> dynamicsPtr;
       if (useAnalyticalGradientsDynamics)
       {
-        throw std::runtime_error(
-            "[LeggedRobotInterface::setupOptimalConrolProblem] The analytical "
-            "dynamics class is not yet implemented!");
+        throw std::runtime_error("解析导数版本尚未实现！");
       }
       else
       {
         const std::string modelName = "dynamics";
         dynamicsPtr.reset(new LeggedRobotDynamicsAD(*pinocchioInterfacePtr_,
-                                                    centroidalModelInfo_, modelName,
+                                                    centroidalModelInfo_,
+                                                    modelName,
                                                     modelSettings_));
       }
-
       problemPtr_->dynamicsPtr = std::move(dynamicsPtr);
 
-      // Cost terms
+      // ===========================================================================
+      // 7. 【代价函数模块】基础跟踪代价 (Cost)
+      // 作用：告诉机器人“你该怎么动”。比如：身子要稳、跟着参考路径走。
+      // ===========================================================================
       problemPtr_->costPtr->add(
           "baseTrackingCost",
           getBaseTrackingCost(taskFile, centroidalModelInfo_, false));
 
-      // Constraint terms
-      // friction cone settings
+      // ===========================================================================
+      // 8. 【约束条件模块】循环为每只腿添加安全规则
+      // 作用：遍历四条腿，添加摩擦锥、零力（摆动腿）、零速度（支撑腿）等约束。
+      // ===========================================================================
       scalar_t frictionCoefficient = 0.7;
       RelaxedBarrierPenalty::Config barrierPenaltyConfig;
-      std::tie(frictionCoefficient, barrierPenaltyConfig) =
-          loadFrictionConeSettings(taskFile, verbose);
+      std::tie(frictionCoefficient, barrierPenaltyConfig) = loadFrictionConeSettings(taskFile, verbose);
 
       bool useAnalyticalGradientsConstraints = false;
       loadData::loadCppDataType(
           taskFile, "legged_robot_interface.useAnalyticalGradientsConstraints",
           useAnalyticalGradientsConstraints);
+
       for (size_t i = 0; i < centroidalModelInfo_.numThreeDofContacts; i++)
       {
         const std::string &footName = modelSettings_.contactNames3DoF[i];
 
         std::unique_ptr<EndEffectorKinematics<scalar_t>> eeKinematicsPtr;
+
+        // 为每只脚生成自动微分的运动学代码（CppAD），用于实时计算雅可比
         if (useAnalyticalGradientsConstraints)
         {
           throw std::runtime_error(
-              "[LeggedRobotInterface::setupOptimalConrolProblem] The analytical "
+              "[LeggedRobotInterface::setupOptimalControlProblem] The analytical "
               "end-effector linear constraint is not implemented!");
         }
         else
         {
           const auto infoCppAd = centroidalModelInfo_.toCppAd();
-          const CentroidalModelPinocchioMappingCppAd pinocchioMappingCppAd(
-              infoCppAd);
-          auto velocityUpdateCallback =
-              [&infoCppAd](const ad_vector_t &state,
-                           PinocchioInterfaceCppAd &pinocchioInterfaceAd)
+          const CentroidalModelPinocchioMappingCppAd pinocchioMappingCppAd(infoCppAd);
+          auto velocityUpdateCallback = [&infoCppAd](const ad_vector_t &state, PinocchioInterfaceCppAd &pinocchioInterfaceAd)
           {
-            const ad_vector_t q =
-                centroidal_model::getGeneralizedCoordinates(state, infoCppAd);
+            const ad_vector_t q = centroidal_model::getGeneralizedCoordinates(state, infoCppAd);
             updateCentroidalDynamics(pinocchioInterfaceAd, infoCppAd, q);
           };
           eeKinematicsPtr.reset(new PinocchioEndEffectorKinematicsCppAd(
@@ -233,48 +224,52 @@ namespace ocs2
               modelSettings_.recompileLibrariesCppAd, modelSettings_.verboseCppAd));
         }
 
-        if (useHardFrictionConeConstraint_)
+        // A. 摩擦锥约束：防止脚底打滑
+        if (useHardFrictionConeConstraint_) // 选择硬约束还是软约束
         {
-          problemPtr_->inequalityConstraintPtr->add(
-              footName + "_frictionCone",
-              getFrictionConeConstraint(i, frictionCoefficient));
+          problemPtr_->inequalityConstraintPtr->add(footName + "_frictionCone", getFrictionConeConstraint(i, frictionCoefficient));
         }
         else
         {
-          problemPtr_->softConstraintPtr->add(
-              footName + "_frictionCone",
-              getFrictionConeSoftConstraint(i, frictionCoefficient,
-                                            barrierPenaltyConfig));
+          problemPtr_->softConstraintPtr->add(footName + "_frictionCone", getFrictionConeSoftConstraint(i, frictionCoefficient, barrierPenaltyConfig));
         }
-        problemPtr_->equalityConstraintPtr->add(footName + "_zeroForce",
-                                                getZeroForceConstraint(i));
-        problemPtr_->equalityConstraintPtr->add(
-            footName + "_zeroVelocity",
-            getZeroVelocityConstraint(*eeKinematicsPtr, i,
-                                      useAnalyticalGradientsConstraints));
-        problemPtr_->equalityConstraintPtr->add(
-            footName + "_normalVelocity",
-            getNormalVelocityConstraint(*eeKinematicsPtr, i,
-                                        useAnalyticalGradientsConstraints));
+        // B. 零力约束：摆动时脚不能使劲
+        problemPtr_->equalityConstraintPtr->add(footName + "_zeroForce", getZeroForceConstraint(i));
+
+        // C. 零速度约束：踩地时脚不能乱动
+        problemPtr_->equalityConstraintPtr->add(footName + "_zeroVelocity", getZeroVelocityConstraint(*eeKinematicsPtr, i, useAnalyticalGradientsConstraints));
+
+        // D. 法向速度约束：控制抬腿和落脚的速度
+        problemPtr_->equalityConstraintPtr->add(footName + "_normalVelocity", getNormalVelocityConstraint(*eeKinematicsPtr, i, useAnalyticalGradientsConstraints));
       }
 
-      // Pre-computation
+      // ===========================================================================
+      // 9. 【优化加速模块】预计算 (Pre-Computation)
+      // 作用：这是改版的精髓。一次性算出这一帧需要的所有中间变量并缓存，大幅降低 CPU 负载。
+      // ===========================================================================
       problemPtr_->preComputationPtr.reset(new LeggedRobotPreComputation(
-          *pinocchioInterfacePtr_, centroidalModelInfo_,
-          *referenceManagerPtr_->getSwingTrajectoryPlanner(), modelSettings_));
+          *pinocchioInterfacePtr_,
+          centroidalModelInfo_,
+          *referenceManagerPtr_->getSwingTrajectoryPlanner(),
+          modelSettings_));
 
-      // Rollout
-      rolloutPtr_.reset(
-          new TimeTriggeredRollout(*problemPtr_->dynamicsPtr, rolloutSettings_));
+      // ===========================================================================
+      // 10. 【预测模拟模块】数值积分 (Rollout)
+      // 作用：MPC 需要“预知未来”，Rollout 负责在给定控制量下模拟出未来的运动轨迹。
+      // ===========================================================================
+      rolloutPtr_.reset(new TimeTriggeredRollout(*problemPtr_->dynamicsPtr, rolloutSettings_));
 
-      // Initialization
+      // ===========================================================================
+      // 11. 【求解启动模块】初始化策略 (Initializer)
+      // 作用：为 MPC 求解器提供一个“靠谱”的初始猜测值，让它收敛得更快。
+      // ===========================================================================
       constexpr bool extendNormalizedMomentum = true;
       initializerPtr_.reset(new LeggedRobotInitializer(
-          centroidalModelInfo_, *referenceManagerPtr_, extendNormalizedMomentum));
+          centroidalModelInfo_,
+          *referenceManagerPtr_,
+          extendNormalizedMomentum));
     }
 
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     /******************************************************************************************************/
     std::shared_ptr<GaitSchedule> LeggedRobotInterface::loadGaitSchedule(
         const std::string &file,
@@ -322,8 +317,6 @@ namespace ocs2
           modelSettings_.phaseTransitionStanceTime);
     }
 
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     /******************************************************************************************************/
     matrix_t LeggedRobotInterface::initializeInputCostWeight(
         const std::string &taskFile,
@@ -373,8 +366,6 @@ namespace ocs2
     }
 
     /******************************************************************************************************/
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     std::unique_ptr<StateInputCost> LeggedRobotInterface::getBaseTrackingCost(
         const std::string &taskFile,
         const CentroidalModelInfo &info,
@@ -403,8 +394,6 @@ namespace ocs2
           std::move(Q), std::move(R), info, *referenceManagerPtr_);
     }
 
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     /******************************************************************************************************/
     std::pair<scalar_t, RelaxedBarrierPenalty::Config>
     LeggedRobotInterface::loadFrictionConeSettings(const std::string &taskFile,
@@ -439,8 +428,6 @@ namespace ocs2
     }
 
     /******************************************************************************************************/
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     std::unique_ptr<StateInputConstraint>
     LeggedRobotInterface::getFrictionConeConstraint(size_t contactPointIndex,
                                                     scalar_t frictionCoefficient)
@@ -451,8 +438,6 @@ namespace ocs2
           contactPointIndex, centroidalModelInfo_);
     }
 
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     /******************************************************************************************************/
     std::unique_ptr<StateInputCost>
     LeggedRobotInterface::getFrictionConeSoftConstraint(
@@ -466,8 +451,6 @@ namespace ocs2
     }
 
     /******************************************************************************************************/
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     std::unique_ptr<StateInputConstraint>
     LeggedRobotInterface::getZeroForceConstraint(size_t contactPointIndex)
     {
@@ -475,8 +458,6 @@ namespace ocs2
           *referenceManagerPtr_, contactPointIndex, centroidalModelInfo_);
     }
 
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     /******************************************************************************************************/
     std::unique_ptr<StateInputConstraint>
     LeggedRobotInterface::getZeroVelocityConstraint(
@@ -511,8 +492,6 @@ namespace ocs2
       }
     }
 
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     /******************************************************************************************************/
     std::unique_ptr<StateInputConstraint>
     LeggedRobotInterface::getNormalVelocityConstraint(

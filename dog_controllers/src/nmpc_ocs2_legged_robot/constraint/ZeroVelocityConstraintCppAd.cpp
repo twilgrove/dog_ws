@@ -35,8 +35,6 @@ namespace ocs2
   {
 
     /******************************************************************************************************/
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     ZeroVelocityConstraintCppAd::ZeroVelocityConstraintCppAd(const SwitchedModelReferenceManager &referenceManager,
                                                              const EndEffectorKinematics<scalar_t> &endEffectorKinematics,
                                                              size_t contactPointIndex, EndEffectorLinearConstraint::Config config)
@@ -46,8 +44,6 @@ namespace ocs2
           contactPointIndex_(contactPointIndex) {}
 
     /******************************************************************************************************/
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     ZeroVelocityConstraintCppAd::ZeroVelocityConstraintCppAd(const ZeroVelocityConstraintCppAd &rhs)
         : StateInputConstraint(rhs),
           referenceManagerPtr_(rhs.referenceManagerPtr_),
@@ -55,15 +51,11 @@ namespace ocs2
           contactPointIndex_(rhs.contactPointIndex_) {}
 
     /******************************************************************************************************/
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     bool ZeroVelocityConstraintCppAd::isActive(scalar_t time) const
     {
       return referenceManagerPtr_->getContactFlags(time)[contactPointIndex_];
     }
 
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     /******************************************************************************************************/
     vector_t ZeroVelocityConstraintCppAd::getValue(scalar_t time, const vector_t &state, const vector_t &input,
                                                    const PreComputation &preComp) const
@@ -71,8 +63,6 @@ namespace ocs2
       return eeLinearConstraintPtr_->getValue(time, state, input, preComp);
     }
 
-    /******************************************************************************************************/
-    /******************************************************************************************************/
     /******************************************************************************************************/
     VectorFunctionLinearApproximation ZeroVelocityConstraintCppAd::getLinearApproximation(scalar_t time, const vector_t &state,
                                                                                           const vector_t &input,
