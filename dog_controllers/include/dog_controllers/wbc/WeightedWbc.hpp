@@ -2,7 +2,7 @@
 
 namespace dog_controllers
 {
-    class WeightedWbc : public WbcBase
+    class WeightedWbc final : public WbcBase
     {
     public:
         WeightedWbc(

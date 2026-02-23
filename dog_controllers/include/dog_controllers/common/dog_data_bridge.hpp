@@ -32,7 +32,7 @@ namespace dog_controllers
         double lin_acc[3] = {0, 0, 0};
     };
 
-    class DogDataBridge
+    class DogDataBridge final
     {
     public:
         DogDataBridge(

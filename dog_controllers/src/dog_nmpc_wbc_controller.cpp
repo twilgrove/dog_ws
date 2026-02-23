@@ -5,6 +5,10 @@ namespace dog_controllers
     CallbackReturn DogNmpcWbcController::on_init()
     {
         node_ = get_node();
+        ros_interface_node_ = std::make_shared<rclcpp::Node>(
+            std::string(node_->get_name()) + "_ros_interface",
+            node_->get_namespace(),
+            node_->get_node_options());
         std::string pkg_share_path = ament_index_cpp::get_package_share_directory("dog_bringup");
         taskFile = pkg_share_path + "/config/description/task.info";
         urdfFile = pkg_share_path + "/config/description/dog.urdf";
@@ -49,9 +53,13 @@ namespace dog_controllers
 
     CallbackReturn DogNmpcWbcController::on_activate(const rclcpp_lifecycle::State &)
     {
+        ros_interface_thread_ = std::make_unique<std::thread>([this]()
+                                                              { rclcpp::spin(ros_interface_node_); });
+        setThreadPriority(20, *ros_interface_thread_);
+
         bridge_ = std::make_unique<DogDataBridge>(state_interfaces_, command_interfaces_, node_);
 
-        robot_interface_ = std::make_unique<LeggedRobotInterface>(taskFile, urdfFile, referenceFile);
+        robot_interface_ = std::make_shared<LeggedRobotInterface>(taskFile, urdfFile, referenceFile);
 
         init_real_or_god();
 
@@ -61,7 +69,11 @@ namespace dog_controllers
             robot_interface_->getPinocchioInterface(),
             robot_interface_->getCentroidalModelInfo(),
             robot_interface_->getEndEffectorKinematics(),
-            node_);
+            ros_interface_node_);
+
+        nmpc_controller_ = std::make_unique<NmpcController>(
+            ros_interface_node_,
+            robot_interface_);
 
         wbc_ = std::make_unique<WeightedWbc>(
             taskFile,
@@ -70,22 +82,27 @@ namespace dog_controllers
             robot_interface_->getEndEffectorKinematics(),
             node_);
 
+        nmpc_controller_->start(state_estimator_->currentObservation_);
+
         return CallbackReturn::SUCCESS;
     }
 
     controller_interface::return_type DogNmpcWbcController::update(const rclcpp::Time &time, const rclcpp::Duration &period)
     {
+        mainLoopTimer_.startTimer();
         bridge_->read_from_hw();
 
         state_estimator_->estimate(bridge_->legs, bridge_->imu, period);
 
-        // vector_t dummyState = vector_t::Zero(24);
-        // vector_t dummyInput = vector_t::Zero(24);
-        // vector_t qpResult = wbc_->update(dummyState,
-        //                                  dummyInput,
-        //                                  state_estimator_->results.rbdState_36,
-        //                                  state_estimator_->results.contactFlags_MPC,
-        //                                  period.seconds());
+        vector_t optimizedState, optimizedInput;
+        size_t plannedMode;
+        nmpc_controller_->update(state_estimator_->currentObservation_, optimizedState, optimizedInput, plannedMode);
+
+        vector_t qpResult = wbc_->update(optimizedState,
+                                         optimizedInput,
+                                         state_estimator_->results.rbdState_36,
+                                         plannedMode,
+                                         period.seconds());
         // Eigen::Vector3d qNom;
         // qNom << 0.0, -0.8, 1.5;
         // for (int i = 0; i < 4; ++i)
@@ -104,8 +121,40 @@ namespace dog_controllers
         // }
 
         bridge_->write_to_hw();
-        debug_manager_->update_debug(state_estimator_->currentObservation_);
+        debug_manager_->update_debug(state_estimator_->currentObservation_,
+                                     nmpc_controller_->mpcMrtInterface_->getPolicy(),
+                                     nmpc_controller_->mpcMrtInterface_->getCommand());
+        mainLoopTimer_.endTimer();
+
+        RCLCPP_INFO_THROTTLE(
+            node_->get_logger(),
+            *node_->get_clock(),
+            10000,
+            "\n\033[1;33m====================================================\033[0m"
+            "\n\033[1;33m[ 主循环实时性能报告 ]\033[0m 🔄"
+            "\n\033[1;33m----------------------------------------------------\033[0m"
+            "\n  运行总数   : %d 次"
+            "\n  平均耗时   : \033[1;32m%.3f\033[0m ms"
+            "\n  最大耗时   : \033[1;31m%.3f\033[0m ms"
+            "\n  实时要求   : < 1.000 ms"
+            "\n\033[1;33m====================================================\033[0m",
+            mainLoopTimer_.getNumTimedIntervals(),
+            mainLoopTimer_.getAverageInMilliseconds(),
+            mainLoopTimer_.getMaxIntervalInMilliseconds());
+
         return controller_interface::return_type::OK;
+    }
+    DogNmpcWbcController::~DogNmpcWbcController()
+    {
+        if (ros_interface_node_)
+        {
+            rclcpp::shutdown();
+        }
+
+        if (ros_interface_thread_ && ros_interface_thread_->joinable())
+        {
+            ros_interface_thread_->join();
+        }
     }
 }
 

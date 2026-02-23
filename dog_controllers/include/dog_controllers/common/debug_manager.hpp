@@ -7,7 +7,7 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
-#include <nmpc_ocs2_legged_robot/visualization/LeggedRobotVisualizer.h>
+#include <ocs2_legged_robot/visualization/LeggedRobotVisualizer.h>
 #include <ocs2_mpc/SystemObservation.h>
 #include <ocs2_oc/oc_data/PrimalSolution.h>
 #include <ocs2_mpc/CommandData.h>
@@ -30,11 +30,11 @@ namespace dog_controllers
                      const PinocchioInterface &pinocchioInterface,
                      const CentroidalModelInfo &info,
                      const PinocchioEndEffectorKinematics &eeKinematics,
-                     rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
-
+                     rclcpp::Node::SharedPtr &node);
+        ~DebugManager() = default;
         void update_debug(const SystemObservation &observation,
-                          const PrimalSolution &primalSolution = PrimalSolution(),
-                          const CommandData &command = CommandData());
+                          const PrimalSolution &primalSolution,
+                          const CommandData &command);
         void publishStateData();
         void publishTF();
         void publishObservation(const SystemObservation &observation);
@@ -47,13 +47,12 @@ namespace dog_controllers
         scalar_t lastTime_{};
         scalar_t delt_Time_{};
 
-        std::shared_ptr<rclcpp::Node> debugNode_;
         std::unique_ptr<ocs2::legged_robot::LeggedRobotVisualizer> visualizerPtr_;
 
         dog_bringup::msg::DogState stateMsg_;
         std::unique_ptr<tf2_ros::TransformBroadcaster> tfBroadcaster_;
         rclcpp::Publisher<ocs2_msgs::msg::MpcObservation>::SharedPtr observationPub_;
         rclcpp::Publisher<dog_bringup::msg::DogState>::SharedPtr statePub_;
-        rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
+        rclcpp::Node::SharedPtr node_;
     };
 }

@@ -17,7 +17,7 @@ model_settings
   
   verboseCppAd                  true  // 编译 CppAd 生成库时是否显示详细信息
   recompileLibrariesCppAd       false  // 每次启动是否强制重新编译导数库 ##（true）
-  modelFolderCppAd              /tmp/ocs2 // 生成的 C++ 导数库代码存放路径
+  modelFolderCppAd              /var/tmp/ocs2 // 生成的 C++ 导数库代码存放路径
 }
 
 // 摆动腿轨迹规划配置

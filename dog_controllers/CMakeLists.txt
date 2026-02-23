@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.8)
 project(dog_controllers)
 
-# set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 ")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -58,8 +58,8 @@ find_package(Boost REQUIRED COMPONENTS system filesystem thread log log_setup)
 find_package(dog_bringup REQUIRED)
 
 # 控制插件
-file(GLOB_RECURSE NMPC_SOURCES CONFIGURE_DEPENDS
-     "src/nmpc_ocs2_legged_robot/**/*" "src/nmpc_ocs2_legged_robot/*")
+file(GLOB_RECURSE NMPC_SOURCES CONFIGURE_DEPENDS "src/ocs2_legged_robot/**/*"
+     "src/ocs2_legged_robot/*")
 
 add_library(
   dog_nmpc_wbc_controller SHARED
@@ -71,6 +71,7 @@ add_library(
   src/state_estimation/KalmanFilterEstimator.cpp
   src/wbc/WbcBase.cpp
   src/wbc/WeightedWbc.cpp
+  src/nmpc/NmpcController.cpp
   ${NMPC_SOURCES})
 
 target_include_directories(

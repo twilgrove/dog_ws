@@ -5,12 +5,13 @@
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
 #include "wbc/Task.h"
 #include <ocs2_core/Types.h>
-#include <nmpc_ocs2_legged_robot/common/Types.h>
+#include <ocs2_core/misc/Benchmark.h>
+#include <ocs2_legged_robot/common/Types.h>
 #include <ocs2_centroidal_model/CentroidalModelInfo.h>
 #include <ocs2_centroidal_model/CentroidalModelPinocchioMapping.h>
 #include <ocs2_pinocchio_interface/PinocchioInterface.h>
 #include <ocs2_pinocchio_interface/PinocchioEndEffectorKinematics.h>
-#include <nmpc_ocs2_legged_robot/gait/MotionPhaseDefinition.h>
+#include <ocs2_legged_robot/gait/MotionPhaseDefinition.h>
 namespace dog_controllers
 {
     using namespace ocs2;
@@ -83,7 +84,7 @@ namespace dog_controllers
         contact_flag_t contactFlag_{};             // 接触状态标志
         size_t numDecisionVars_{}, numContacts_{}; // 决策变量与接触点数
         rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
-
+        benchmark::RepeatedTimer wbcTimer_;
         // --- 任务增益与物理限制 ---
         vector_t torqueLimits_{};        // 关节力矩限制
         scalar_t frictionCoeff_{};       // 摩擦系数

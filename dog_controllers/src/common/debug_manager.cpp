@@ -10,7 +10,7 @@ namespace dog_controllers
                                const PinocchioInterface &pinocchioInterface,
                                const CentroidalModelInfo &info,
                                const PinocchioEndEffectorKinematics &eeKinematics,
-                               rclcpp_lifecycle::LifecycleNode::SharedPtr &node)
+                               rclcpp::Node::SharedPtr &node)
         : imuPtr_(imuPtr_), results_(results_), node_(node)
     {
         RCLCPP_INFO(node_->get_logger(), "\033[1;36m====================================================\033[0m");
@@ -20,25 +20,19 @@ namespace dog_controllers
         RCLCPP_INFO(node_->get_logger(), "\033[1;33m📊 [PARAM] 已加载配置清单:\033[0m");
         RCLCPP_INFO(node_->get_logger(), "\033[1;33m  └─ 发布间隔: \033[0m%.3fs", threshold);
 
-        debugNode_ = std::make_shared<rclcpp::Node>(
-            std::string(node_->get_name()) + "_debug_sub",
-            node_->get_namespace(),
-            node_->get_node_options());
-
         visualizerPtr_ = std::make_unique<ocs2::legged_robot::LeggedRobotVisualizer>(
             pinocchioInterface,
             info,
             eeKinematics,
-            debugNode_,
+            node_,
             1.0 / threshold);
 
-        statePub_ = debugNode_->create_publisher<dog_bringup::msg::DogState>(
+        statePub_ = node_->create_publisher<dog_bringup::msg::DogState>(
             "dog_robot_state", rclcpp::SensorDataQoS());
         stateMsg_.header.frame_id = "world";
 
-        tfBroadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(debugNode_);
-
-        observationPub_ = debugNode_->create_publisher<ocs2_msgs::msg::MpcObservation>(
+        tfBroadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(node_);
+        observationPub_ = node_->create_publisher<ocs2_msgs::msg::MpcObservation>(
             "dog_robot_mpc_observation", 10);
 
         RCLCPP_INFO(node_->get_logger(), "\033[1;32m[ 初始化完成 ] ✅ DebugManager\033[0m");
@@ -50,18 +44,20 @@ namespace dog_controllers
                                     const CommandData &command)
     {
         delt_Time_ = observation.time - lastTime_;
+
         // if (delt_Time_ >= threshold)
         // {
         //     publishStateData();
         //     lastTime_ = observation.time;
         // }
         // RCLCPP_INFO_THROTTLE(node_->get_logger(), *node_->get_clock(), 1000, "运行中... ");
-        if (delt_Time_ >= 0.002) // 500Hz
+        if (delt_Time_ >= 0.005)
         {
             publishTF();
             publishObservation(observation);
             lastTime_ = observation.time;
         }
+        visualizerPtr_->update(observation, primalSolution, command);
     }
     void DebugManager::publishTF()
     {

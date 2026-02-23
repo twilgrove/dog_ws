@@ -8,7 +8,7 @@
 #include <pinocchio/algorithm/frames.hpp>
 #include <pinocchio/algorithm/rnea.hpp>
 #include <utility>
-#include <nmpc_ocs2_legged_robot/gait/MotionPhaseDefinition.h>
+#include <ocs2_legged_robot/gait/MotionPhaseDefinition.h>
 namespace dog_controllers
 {
     WbcBase::WbcBase(

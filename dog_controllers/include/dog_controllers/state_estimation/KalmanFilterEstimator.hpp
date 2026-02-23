@@ -15,6 +15,8 @@ namespace dog_controllers
             const PinocchioEndEffectorKinematics &eeKinematics,
             rclcpp_lifecycle::LifecycleNode::SharedPtr &node);
 
+        ~KalmanFilterEstimator() override = default;
+
         const vector_t &estimate(const std::array<LegData, 4> &legsPtr, const ImuData &imuData, const rclcpp::Duration &period) override;
 
         void loadSettings(const std::string &taskFile, bool verbose);
