@@ -45,9 +45,9 @@ namespace dog_controllers
         // 更新实测数据的动力学
         updateMeasured(rbdStateMeasured);
         // 更新期望数据的动力学
-        // updateDesired(stateDesired, inputDesired);
+        updateDesired(stateDesired, inputDesired);
 
-        return {}; // 基类返回空，具体求解在子类 HoPmcWbc 中实现
+        return {};
     }
 
     /**
@@ -307,45 +307,28 @@ namespace dog_controllers
     }
     //-----------------------------------------------单WBC站立-----------------------------------------------
     /**
-     * 构造机身加速度任务
+     * 构造机身平衡任务
      */
     Task WbcBase::formulateBaseAccelTask2(const vector_t &rbdStateMeasured)
     {
-        // 1. 初始化 A 矩阵：6行（3平移+3旋转），numDecisionVars_ 列
         matrix_t a(6, numDecisionVars_);
         a.setZero();
-
-        // 2. 锁定决策变量中的基座 6 自由度加速度 (索引 0-5)
-        // 这是核心约束：让优化器计算出的 q_acc.head(6) 等于我们算出的参考加速度 b
         a.block(0, 0, 6, 6) = matrix_t::Identity(6, 6);
-
-        // 3. --- 手动设定目标值 (无 Bug 核心：确保目标与测量量坐标系一致) ---
-        // 目标高度 (Z轴)
-        const scalar_t targetHeight = 0.32;
-
-        // 4. --- 设定 PD 增益 (这里是抗干扰强度的来源) ---
-        // 5. --- 计算 PD 加速度 b ---
         vector_t b = vector_t::Zero(6);
 
         // [平移部分] 索引 0, 1, 2 (X, Y, Z)
-        b(0) = baseKpw_ * (-qMeasured_(0)) + baseKdw_ * (-vMeasured_(0));               // X 轴防漂移
-        b(1) = baseKpw_ * (-qMeasured_(1)) + baseKdw_ * (-vMeasured_(1));               // Y 轴防漂移
-        b(2) = baseKpw_ * (targetHeight - qMeasured_(2)) + baseKdw_ * (-vMeasured_(2)); // Z 轴高度控制
+        b(0) = baseKpw_ * (-qMeasured_(0)) + baseKdw_ * (-vMeasured_(0));
+        b(1) = baseKpw_ * (-qMeasured_(1)) + baseKdw_ * (-vMeasured_(1));
+        b(2) = baseKpw_ * (0.32 - qMeasured_(2)) + baseKdw_ * (-vMeasured_(2));
 
         // [旋转部分] 索引 3, 4, 5(Yaw, Pitch, Roll)
-        scalar_t cur_yaw = qMeasured_(3);
-        scalar_t cur_pitch = qMeasured_(4);
-        scalar_t cur_roll = qMeasured_(5);
 
-        scalar_t vel_yaw = rbdStateMeasured(20);
-        scalar_t vel_pitch = rbdStateMeasured(19);
-        scalar_t vel_roll = rbdStateMeasured(18);
-
-        b(3) = baseKpj_ * (-cur_roll) + baseKdj_ * (-vel_roll);   // Roll 放在索引 3
-        b(4) = baseKpj_ * (-cur_pitch) + baseKdj_ * (-vel_pitch); // Pitch 放在索引 4
-        b(5) = baseKpj_ * (-cur_yaw) + baseKdj_ * (-vel_yaw);     // Yaw 放在索引 5
+        b(3) = baseKpj_ * (-qMeasured_(3)) + baseKdj_ * (-vMeasured_(3));
+        b(4) = baseKpj_ * (-qMeasured_(4)) + baseKdj_ * (-vMeasured_(4));
+        b(5) = baseKpj_ * (-qMeasured_(5)) + baseKdj_ * (-vMeasured_(5));
         return {a, b, matrix_t(), vector_t()};
     }
+
     /**
      * 构造接触力任务：站立时每条腿都要承担四分之一的体重
      */
@@ -378,6 +361,7 @@ namespace dog_controllers
 
         return {a, b, matrix_t(), vector_t()};
     }
+
     /**
      * 构造关节正则化任务 (Joint Regularization)
      * 作用：给关节一个 PD 指令，使其倾向于保持在站立姿态，防止冗余自由度漂移。

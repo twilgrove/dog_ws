@@ -20,7 +20,7 @@ namespace dog_controllers
         RCLCPP_INFO(node_->get_logger(), "\033[1;33m  └─ IMU 标识: %s\033[0m", imu_name_.c_str());
 
         // 1. 初始化结构
-        const std::string leg_prefixes[4] = {"LF", "RF", "LH", "RH"};
+        const std::string leg_prefixes[4] = {"LF", "LH", "RF", "RH"};
         imu.name = imu_name_;
         for (int i = 0; i < 4; ++i)
         {

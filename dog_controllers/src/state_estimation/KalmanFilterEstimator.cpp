@@ -166,7 +166,7 @@ namespace dog_controllers
         for (size_t i = 0; i < numContacts_; ++i)
         {
             // 判断触地状态
-            bool isContact = (legsPtr[i].contact > 0.5);
+            bool isContact = results.contactFlags_WBC[i];
 
             // 更新 Q
             scalar_t q_m = isContact ? 1.0 : suspect_q;

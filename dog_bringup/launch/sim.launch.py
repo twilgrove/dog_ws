@@ -57,7 +57,7 @@ def generate_launch_description():
             "-y",
             "0",
             "-z",
-            "0.4",
+            "0.32",
             "-timeout",
             "300",
         ],
@@ -109,7 +109,7 @@ def generate_launch_description():
     ld.add_action(gazebo)
     ld.add_action(spawn_entity)
 
-    ld.add_action(load_joint_state_broadcaster)
+    # ld.add_action(load_joint_state_broadcaster)
     ld.add_action(controller)
 
     ld.add_action(dog_controller_container)

@@ -86,7 +86,7 @@ namespace dog_controllers
         qpProblem.setOptions(options);
 
         // 执行 QP 初始化和求解
-        int nWSR = 20;
+        int nWSR = 50;
         qpProblem.init(H.data(), g.data(), A.data(), nullptr, nullptr, lbA.data(), ubA.data(), nWSR);
 
         // 提取原始解
@@ -126,12 +126,12 @@ namespace dog_controllers
      */
     Task WeightedWbc::formulateWeightedTasks(const vector_t &rbdStateMeasured, const vector_t &stateDesired, const vector_t &inputDesired, scalar_t period)
     {
-        // return formulateSwingLegTask() * weightSwingLeg_ +
-        //        formulateBaseAccelTask(stateDesired, inputDesired, period) * weightBaseAccel_ +
-        //        formulateContactForceTask(inputDesired) * weightContactForce_ ;
-        return formulateContactForceTask2() * weightContactForce_ +
-               formulateJointRegularizationTask() * weightSwingLeg_ +
-               formulateBaseAccelTask2(rbdStateMeasured) * weightBaseAccel_;
+        return formulateSwingLegTask() * weightSwingLeg_ +
+               formulateBaseAccelTask(stateDesired, inputDesired, period) * weightBaseAccel_ +
+               formulateContactForceTask(inputDesired) * weightContactForce_;
+        // return formulateContactForceTask2() * weightContactForce_ +
+        //        formulateJointRegularizationTask() * weightSwingLeg_ +
+        //        formulateBaseAccelTask2(rbdStateMeasured) * weightBaseAccel_;
     }
 
 }

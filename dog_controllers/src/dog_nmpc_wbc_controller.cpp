@@ -53,9 +53,6 @@ namespace dog_controllers
 
     CallbackReturn DogNmpcWbcController::on_activate(const rclcpp_lifecycle::State &)
     {
-        ros_interface_thread_ = std::make_unique<std::thread>([this]()
-                                                              { rclcpp::spin(ros_interface_node_); });
-        setThreadPriority(20, *ros_interface_thread_);
 
         bridge_ = std::make_unique<DogDataBridge>(state_interfaces_, command_interfaces_, node_);
 
@@ -82,6 +79,12 @@ namespace dog_controllers
             robot_interface_->getEndEffectorKinematics(),
             node_);
 
+        ros_interface_thread_ = std::make_unique<std::thread>([this]()
+                                                              { rclcpp::spin(ros_interface_node_); });
+        setThreadPriority(20, *ros_interface_thread_);
+
+        bridge_->read_from_hw();
+        state_estimator_->estimate(bridge_->legs, bridge_->imu, rclcpp::Duration::from_seconds(0.002));
         nmpc_controller_->start(state_estimator_->currentObservation_);
 
         return CallbackReturn::SUCCESS;
@@ -96,6 +99,7 @@ namespace dog_controllers
 
         vector_t optimizedState, optimizedInput;
         size_t plannedMode;
+
         nmpc_controller_->update(state_estimator_->currentObservation_, optimizedState, optimizedInput, plannedMode);
 
         vector_t qpResult = wbc_->update(optimizedState,
@@ -103,22 +107,24 @@ namespace dog_controllers
                                          state_estimator_->results.rbdState_36,
                                          plannedMode,
                                          period.seconds());
-        // Eigen::Vector3d qNom;
-        // qNom << 0.0, -0.8, 1.5;
-        // for (int i = 0; i < 4; ++i)
-        // {
-        //     for (int j = 0; j < 3; ++j)
-        //     {
-        //         int jointIdx = i * 3 + j;
 
-        //         bridge_->legs[i].joints[j]->cmd_pos = qNom(j); // 目标角度 (0, -0.8, 1.5)
-        //         bridge_->legs[i].joints[j]->cmd_vel = 0.0;     // 目标速度设为 0
-        //         bridge_->legs[i].joints[j]->cmd_kp = 10.0;     // 低增益 Kp，提供基础刚度
-        //         bridge_->legs[i].joints[j]->cmd_kd = 1.0;      // 阻尼，防止震荡
+        vector_t torque = qpResult.tail(12);
+        vector_t posDes = optimizedState.segment(12, 12);
+        vector_t velDes = optimizedInput.segment(12, 12);
 
-        //         bridge_->legs[i].joints[j]->cmd_ff = qpResult(30 + jointIdx);
-        //     }
-        // }
+        for (int i = 0; i < 4; ++i)
+        {
+            for (int j = 0; j < 3; ++j)
+            {
+                int jointIdx = i * 3 + j;
+
+                bridge_->legs[i].joints[j]->cmd_pos = posDes(jointIdx);
+                bridge_->legs[i].joints[j]->cmd_vel = velDes(jointIdx);
+                bridge_->legs[i].joints[j]->cmd_kp = 0.0;
+                bridge_->legs[i].joints[j]->cmd_kd = 3.0;
+                bridge_->legs[i].joints[j]->cmd_ff = torque(jointIdx);
+            }
+        }
 
         bridge_->write_to_hw();
         debug_manager_->update_debug(state_estimator_->currentObservation_,
@@ -146,15 +152,12 @@ namespace dog_controllers
     }
     DogNmpcWbcController::~DogNmpcWbcController()
     {
-        if (ros_interface_node_)
-        {
-            rclcpp::shutdown();
-        }
-
         if (ros_interface_thread_ && ros_interface_thread_->joinable())
         {
             ros_interface_thread_->join();
         }
+
+        printf("---------------------DogNmpcWbcController destructed.\n");
     }
 }
 
