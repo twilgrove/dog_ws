@@ -15,6 +15,7 @@ namespace dog_controllers
         RCLCPP_INFO(node_->get_logger(), "\033[1;36m[ 初始化开始 ] 🚀 WeightedWbc\033[0m");
         boost::property_tree::ptree pt;
         boost::property_tree::read_info(taskFile, pt);
+        loadData::loadPtreeValue(pt, wbcnWSR_, "weight.nWSR", false);
         loadData::loadPtreeValue(pt, weightSwingLeg_, "weight.swingLeg", false);
         loadData::loadPtreeValue(pt, weightBaseAccel_, "weight.baseAccel", false);
         loadData::loadPtreeValue(pt, weightContactForce_, "weight.contactForce", false);
@@ -25,18 +26,13 @@ namespace dog_controllers
         loadData::loadPtreeValue(pt, frictionCoeff_, "frictionConeTask.frictionCoefficient", false);
         loadData::loadPtreeValue(pt, swingKp_, "swingLegTask.kp", false);
         loadData::loadPtreeValue(pt, swingKd_, "swingLegTask.kd", false);
-        loadData::loadPtreeValue(pt, baseKpw_, "baseTask.kpw", false);
-        loadData::loadPtreeValue(pt, baseKdw_, "baseTask.kdw", false);
-        loadData::loadPtreeValue(pt, baseKpj_, "baseTask.kpj", false);
-        loadData::loadPtreeValue(pt, baseKdj_, "baseTask.kdj", false);
 
         RCLCPP_INFO(node_->get_logger(), "\033[1;33m📊 [PARAM] 已加载 WBC 权重配置清单:\033[0m");
+        RCLCPP_INFO(node_->get_logger(), "\033[1;33m  ├─ QP 最大迭代次数       : \033[0m%d", wbcnWSR_);
         RCLCPP_INFO(node_->get_logger(), "\033[1;33m  ├─ 关节力矩限制 (H,H,K): \033[0m[%.1f, %.1f, %.1f] N.m",
                     torqueLimits_(0), torqueLimits_(1), torqueLimits_(2));
         RCLCPP_INFO(node_->get_logger(), "\033[1;33m  ├─ 地面摩擦系数        : \033[0m%.2f", frictionCoeff_);
         RCLCPP_INFO(node_->get_logger(), "\033[1;33m  ├─ 摆动腿 PD 增益      : \033[0mKp=%.1f, Kd=%.1f", swingKp_, swingKd_);
-        RCLCPP_INFO(node_->get_logger(), "\033[1;33m  ├─ 基座位置 PD 增益    : \033[0mKp=%.1f, Kd=%.1f", baseKpw_, baseKdw_);
-        RCLCPP_INFO(node_->get_logger(), "\033[1;33m  ├─ 基座姿态 PD 增益    : \033[0mKp=%.1f, Kd=%.1f", baseKpj_, baseKdj_);
         RCLCPP_INFO(node_->get_logger(), "\033[1;33m  ├─ 摆动腿跟踪权重       : \033[0m%.3f", weightSwingLeg_);
         RCLCPP_INFO(node_->get_logger(), "\033[1;33m  ├─ 机身加速度权重       : \033[0m%.3f", weightBaseAccel_);
         RCLCPP_INFO(node_->get_logger(), "\033[1;33m  └─ 接触力正则化         : \033[0m%.3f", weightContactForce_);
@@ -86,7 +82,7 @@ namespace dog_controllers
         qpProblem.setOptions(options);
 
         // 执行 QP 初始化和求解
-        int nWSR = 50;
+        int nWSR = wbcnWSR_;
         qpProblem.init(H.data(), g.data(), A.data(), nullptr, nullptr, lbA.data(), ubA.data(), nWSR);
 
         // 提取原始解
@@ -118,7 +114,10 @@ namespace dog_controllers
      */
     Task WeightedWbc::formulateConstraints()
     {
-        return formulateFloatingBaseEomTask() + formulateTorqueLimitsTask() + formulateFrictionConeTask() + formulateNoContactMotionTask();
+        return formulateFloatingBaseEomTask() +
+               formulateTorqueLimitsTask() +
+               formulateFrictionConeTask() +
+               formulateNoContactMotionTask();
     }
 
     /**
@@ -129,9 +128,6 @@ namespace dog_controllers
         return formulateSwingLegTask() * weightSwingLeg_ +
                formulateBaseAccelTask(stateDesired, inputDesired, period) * weightBaseAccel_ +
                formulateContactForceTask(inputDesired) * weightContactForce_;
-        // return formulateContactForceTask2() * weightContactForce_ +
-        //        formulateJointRegularizationTask() * weightSwingLeg_ +
-        //        formulateBaseAccelTask2(rbdStateMeasured) * weightBaseAccel_;
     }
 
 }

@@ -236,7 +236,7 @@ namespace ocs2
         // 设置 Header：包括 frame_id（通常是 odom）和时间戳
         baseToWorldTransform.header = getHeaderMsg(frameId_, timeStamp);
         // 子坐标系设为 base（需与 URDF 中的根 link 对应）
-        baseToWorldTransform.child_frame_id = "base";
+        baseToWorldTransform.child_frame_id = "base_link";
 
         // 将欧拉角（ZYX顺序，取自状态向量末尾3位）转换为 Eigen 四元数
         const Eigen::Quaternion<scalar_t> q_world_base =

@@ -1,5 +1,5 @@
 // 动力学模型类型：0 - 全质心动力学，1 - 单刚体动力学
-centroidalModelType             0  
+centroidalModelType             1  
   
 // 机器人接口全局设置
 legged_robot_interface
@@ -143,7 +143,7 @@ mpc
 
   debugPrint                      false
 
-  mpcDesiredFrequency             100  ; // MPC 求解期望频率 (Hz)         ##（50）
+  mpcDesiredFrequency             50  ; // MPC 求解期望频率 (Hz)         ##（100）
   mrtDesiredFrequency             1000 ; // 模型参考追踪（MRT）频率 (Hz)  ##（400）
 }
 
@@ -161,7 +161,7 @@ initialState
    ;; 基座姿态: [位置(3), 欧拉角(3)] ;;
    (6,0)  0.0     ; p_base_x
    (7,0)  0.0     ; p_base_y
-   (8,0)  0.32   ; p_base_z (初始站立高度)
+   (8,0)  0.32    ; p_base_z (初始站立高度)
    (9,0)  0.0     ; theta_base_z (偏航角 Yaw)
    (10,0) 0.0     ; theta_base_y (俯仰角 Pitch)
    (11,0) 0.0     ; theta_base_x (横滚角 Roll)
@@ -294,8 +294,8 @@ selfCollision
 // 电机力矩限制
 torqueLimitsTask
 {
-   HAA  24     ; （N.M）
-   HFE  24     ; （N.M）
+   HAA  36     ; （N.M）
+   HFE  36     ; （N.M）
    KFE  36     ; （N.M）
 }
 
@@ -305,13 +305,7 @@ frictionConeTask
   frictionCoefficient    0.3 // 物理摩擦系数（应与 MPC 中的设置保持一致或略小以保证安全）
 }
 
-baseTask
-{
-  kpw      20
-  kdw       3
-  kpj      40
-  kdj       3
-}
+
 // 摆动腿追踪任务
 swingLegTask
 {
@@ -322,6 +316,7 @@ swingLegTask
 // WBC 各项子任务的权重分配平方：数值越大，优先级越高
 weight
 {
+    nWSR            50 //迭代次数
     swingLeg        100      
     baseAccel       1     
     contactForce    0.01     

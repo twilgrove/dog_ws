@@ -47,9 +47,19 @@ namespace dog_controllers
         std::shared_ptr<rclcpp::Node> ros_interface_node_;
         std::unique_ptr<std::thread> ros_interface_thread_;
         benchmark::RepeatedTimer mainLoopTimer_;
+        bool isFirstUpdate_ = 1;
         std::string urdfFile;
         std::string taskFile;
         std::string referenceFile;
+
+        enum class ControlState
+        {
+            JOINT_STANDUP,
+            NMPC_ACTIVE
+        };
+        ControlState currentState_ = ControlState::JOINT_STANDUP;
+        scalar_t standUpTimer_ = 0.0;
+        const scalar_t standUpDuration_ = 2.0;
     };
     class DogNmpcWbcController_God : public DogNmpcWbcController
     {

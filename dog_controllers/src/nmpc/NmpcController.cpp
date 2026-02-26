@@ -42,27 +42,42 @@ namespace dog_controllers
 
     void NmpcController::start(const SystemObservation &initObservation)
     {
+        TargetTrajectories target;
+        scalar_t t = initObservation.time;
+        // 设定从现在到未来 2 秒的参考轨迹（保持 0.32m）
+        target.timeTrajectory = {t, t + 5.0, t + 10.0, t + 15.0, t + 20.0};
 
-        // 设置初始目标轨迹（原地静止）
-        TargetTrajectories targetTrajectories({initObservation.time},
-                                              {initObservation.state},
-                                              {initObservation.input});
-        mpcMrtInterface_->getReferenceManager().setTargetTrajectories(targetTrajectories);
+        vector_t goalState = vector_t::Zero(24);
+        goalState(8) = 0.32; // 目标高度
+        for (int k = 0; k < 4; k++)
+        {
+            goalState(12 + k * 3 + 0) = 0.0;  // HAA
+            goalState(12 + k * 3 + 1) = -0.8; // HFE
+            goalState(12 + k * 3 + 2) = 1.5;  // KFE
+        }
+        target.stateTrajectory = {initObservation.state, goalState, goalState, goalState, goalState};
+        target.inputTrajectory = {initObservation.input, vector_t::Zero(24), vector_t::Zero(24), vector_t::Zero(24), vector_t::Zero(24)};
 
+        // // 设置初始目标轨迹（原地静止）
+        // TargetTrajectories targetTrajectories({initObservation.time},
+        //                                       {initObservation.state},
+        //                                       {initObservation.input});
+
+        mpcMrtInterface_->setCurrentObservation(initObservation);
+        mpcMrtInterface_->getReferenceManager().setTargetTrajectories(target);
         while (rclcpp::ok() && !mpcMrtInterface_->initialPolicyReceived())
         {
-            mpcMrtInterface_->setCurrentObservation(initObservation);
             mpcMrtInterface_->advanceMpc();
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            rclcpp::Rate(leggedInterface_->mpcSettings().mrtDesiredFrequency_).sleep();
         }
 
         RCLCPP_INFO(node_->get_logger(), "\033[1;32m已收到初始策略，NMPC控制器启动。\033[0m");
 
         controllerRunning_ = true;
-        mpcRunning_ = true;
         mpcThread_ = std::thread(&NmpcController::mpcThreadTask, this);
-
         setThreadPriority(leggedInterface_->sqpSettings().threadPriority, mpcThread_);
+
+        mpcRunning_ = true;
     }
 
     void NmpcController::mpcThreadTask()
@@ -101,7 +116,7 @@ namespace dog_controllers
         RCLCPP_INFO_THROTTLE(
             node_->get_logger(),
             *node_->get_clock(),
-            10000,
+            1000,
             "\n\033[1;36m====================================================\033[0m"
             "\n\033[1;36m[ NMPC 实时性能报告 ]\033[0m 🚀"
             "\n\033[1;36m----------------------------------------------------\033[0m"

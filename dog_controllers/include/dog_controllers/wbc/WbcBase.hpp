@@ -85,11 +85,10 @@ namespace dog_controllers
         size_t numDecisionVars_{}, numContacts_{}; // 决策变量与接触点数
         rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
         benchmark::RepeatedTimer wbcTimer_;
+        int wbcnWSR_;
         // --- 任务增益与物理限制 ---
         vector_t torqueLimits_{};        // 关节力矩限制
         scalar_t frictionCoeff_{};       // 摩擦系数
         scalar_t swingKp_{}, swingKd_{}; // 摆动腿 PD 增益
-        scalar_t baseKpw_{}, baseKdw_{}; // 基座位置 PD 增益
-        scalar_t baseKpj_{}, baseKdj_{}; // 基座姿态 PD 增益
     };
 }

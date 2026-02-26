@@ -2,6 +2,8 @@
 #include <gazebo/physics/physics.hh>
 #include <gazebo/sensors/SensorManager.hh>
 
+// 0:前趴；1：后趴；2：站立；
+#define JointPosition 0
 namespace dog_hardware
 {
     CallbackReturn DogGazeboHW::on_init(const hardware_interface::HardwareInfo &info)
@@ -46,14 +48,27 @@ namespace dog_hardware
 
             double initial_pos = 0.0;
 
+#if JointPosition == 0 // 前趴
+            double HAA = 0.4;
+            double HFE = -1.2;
+            double KFE = 2.79;
+#elif JointPosition == 1 // 后趴
+            double HAA = 0.0;
+            double HFE = -2.67;
+            double KFE = 2.79;
+#elif JointPosition == 2 // 站立
+            double HAA = 0.0;
+            double HFE = -0.8;
+            double KFE = 1.5;
+#endif
             if (jd.name.find("HAA") != std::string::npos)
-                initial_pos = (jd.name.find("L") != std::string::npos) ? 0.0 : 0.0; //-0.4 : 0.4;
+                initial_pos = (jd.name.find("L") != std::string::npos) ? -HAA : HAA;
 
             else if (jd.name.find("HFE") != std::string::npos)
-                initial_pos = -0.8; //-1.2;
+                initial_pos = HFE;
 
             else if (jd.name.find("KFE") != std::string::npos)
-                initial_pos = 1.5; // 2.8;
+                initial_pos = KFE;
 
             jd.gz_joint->SetPosition(0, initial_pos);
 

@@ -45,15 +45,9 @@ namespace dog_controllers
     {
         delt_Time_ = observation.time - lastTime_;
 
-        // if (delt_Time_ >= threshold)
-        // {
-        //     publishStateData();
-        //     lastTime_ = observation.time;
-        // }
-        // RCLCPP_INFO_THROTTLE(node_->get_logger(), *node_->get_clock(), 1000, "运行中... ");
-        if (delt_Time_ >= 0.005)
+        if (delt_Time_ >= 0.05)
         {
-            publishTF();
+            // publishTF();
             publishObservation(observation);
             lastTime_ = observation.time;
         }
