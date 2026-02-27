@@ -94,7 +94,7 @@
         </joint>
 
         <link name="${name}_FOOT">
-            <collision>
+            <collision name="${name}_FOOT_collision">
                 <origin rpy="1.57079632679 0 0" />
                 <geometry>
                     <sphere radius="${foot_radius}"/>
@@ -140,12 +140,11 @@
         </gazebo>
 
         <gazebo reference="${name}_FOOT">
-            <mu1>1.0</mu1>
-            <mu2>1.0</mu2>
+            <mu1>0.6</mu1>
+            <mu2>0.6</mu2>
             <kp>1000000.0</kp>
-            <kd>1000.0</kd>
+            <kd>100.0</kd>
             <minDepth>0.001</minDepth>
-            <maxVel>0.1</maxVel>
             <self_collide>1</self_collide>
             <sensor name="${name}_contact_sensor" type="contact">
               <always_on>true</always_on>

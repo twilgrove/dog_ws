@@ -180,7 +180,7 @@ namespace ocs2
       // ===========================================================================
       problemPtr_->costPtr->add(
           "baseTrackingCost",
-          getBaseTrackingCost(taskFile, centroidalModelInfo_, false));
+          getBaseTrackingCost(taskFile, centroidalModelInfo_, true));
 
       // ===========================================================================
       // 8. 【约束条件模块】循环为每只腿添加安全规则

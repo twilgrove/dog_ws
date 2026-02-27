@@ -11,6 +11,10 @@
 #include <ocs2_mpc/SystemObservation.h>
 #include <ocs2_centroidal_model/CentroidalModelRbdConversions.h>
 #include <ocs2_robotic_tools/common/RotationTransforms.h>
+#include <pinocchio/algorithm/centroidal.hpp>
+#include <pinocchio/algorithm/crba.hpp>
+#include <pinocchio/algorithm/frames.hpp>
+#include <pinocchio/algorithm/rnea.hpp>
 
 namespace dog_controllers
 {
@@ -30,6 +34,7 @@ namespace dog_controllers
         vector_t rbdState_36;
         contact_flag_t contactFlags_WBC; // 4位布尔数组 (WBC用)
         size_t contactFlags_MPC = 15;    // 整数索引 (MPC用)
+        std::array<matrix3_t, 4> legJacobians;
     };
     class StateEstimatorBase
     {
@@ -49,14 +54,15 @@ namespace dog_controllers
     protected:
         vector3_t zyxOffset_ = vector3_t::Zero();
         void updateObservationFromResults(const rclcpp::Duration &period);
+        void updateGenericResults(const double &qw, const double &qx, const double &qy, const double &qz, const std::array<LegData, 4> &legsPtr);
+        void updateJacobians();
 
         PinocchioInterface pinocchioInterface_;
+        CentroidalModelInfo info_;
         std::unique_ptr<PinocchioEndEffectorKinematics> eeKinematics_;
         std::unique_ptr<CentroidalModelRbdConversions> rbdConversions_;
 
         rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
-
-        void updateGenericResults(const double &qw, const double &qx, const double &qy, const double &qz, const std::array<LegData, 4> &legsPtr);
 
         inline vector3_t quatToZyx(const Eigen::Quaternion<scalar_t> &q)
         {

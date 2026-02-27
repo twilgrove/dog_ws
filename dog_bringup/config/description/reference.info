@@ -6,7 +6,7 @@ targetRotationVelocity              0.3;
 
 // 期望的质心 (CoM) 离地高度 (单位: m)
 // 状态估计和 MPC 会尽量让底座保持在这个高度
-comHeight                           0.32;
+comHeight                           0.306;
 
 // 默认关节状态：定义机器人站立时的名义角度 (单位: rad)
 // 顺序通常与 URDF 中的关节定义一致

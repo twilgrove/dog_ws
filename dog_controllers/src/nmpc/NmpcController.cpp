@@ -28,7 +28,7 @@ namespace dog_controllers
             robotName,
             leggedInterface_->getReferenceManagerPtr());
 
-        rosReferenceManagerPtr->subscribe(node_);
+        // rosReferenceManagerPtr->subscribe(node_);
 
         mpcPtr_->getSolverPtr()->addSynchronizedModule(gaitReceiverPtr);
         mpcPtr_->getSolverPtr()->setReferenceManager(rosReferenceManagerPtr);
@@ -44,19 +44,19 @@ namespace dog_controllers
     {
         TargetTrajectories target;
         scalar_t t = initObservation.time;
-        // 设定从现在到未来 2 秒的参考轨迹（保持 0.32m）
-        target.timeTrajectory = {t, t + 5.0, t + 10.0, t + 15.0, t + 20.0};
+
+        target.timeTrajectory = {t, t + 1.0, t + 10.0, t + 50.0, t + 100.0};
 
         vector_t goalState = vector_t::Zero(24);
-        goalState(8) = 0.32; // 目标高度
+        goalState(8) = 0.306; // 目标高度
         for (int k = 0; k < 4; k++)
         {
             goalState(12 + k * 3 + 0) = 0.0;  // HAA
             goalState(12 + k * 3 + 1) = -0.8; // HFE
             goalState(12 + k * 3 + 2) = 1.5;  // KFE
         }
-        target.stateTrajectory = {initObservation.state, goalState, goalState, goalState, goalState};
-        target.inputTrajectory = {initObservation.input, vector_t::Zero(24), vector_t::Zero(24), vector_t::Zero(24), vector_t::Zero(24)};
+        target.stateTrajectory = {goalState, goalState, goalState, goalState, goalState};
+        target.inputTrajectory = {vector_t::Zero(24), vector_t::Zero(24), vector_t::Zero(24), vector_t::Zero(24), vector_t::Zero(24)};
 
         // // 设置初始目标轨迹（原地静止）
         // TargetTrajectories targetTrajectories({initObservation.time},
@@ -113,22 +113,22 @@ namespace dog_controllers
                                          plannedMode);
         observation.input = optimizedInput;
 
-        RCLCPP_INFO_THROTTLE(
-            node_->get_logger(),
-            *node_->get_clock(),
-            1000,
-            "\n\033[1;36m====================================================\033[0m"
-            "\n\033[1;36m[ NMPC 实时性能报告 ]\033[0m 🚀"
-            "\n\033[1;36m----------------------------------------------------\033[0m"
-            "\n  求解总数   : %d 次"
-            "\n  平均耗时   : \033[1;32m%.3f\033[0m ms"
-            "\n  最大耗时   : \033[1;31m%.3f\033[0m ms"
-            "\n  实时要求   : < %.3f ms"
-            "\n\033[1;36m====================================================\033[0m",
-            mpcTimer_.getNumTimedIntervals(),
-            mpcTimer_.getAverageInMilliseconds(),
-            mpcTimer_.getMaxIntervalInMilliseconds(),
-            1000.0 / leggedInterface_->mpcSettings().mpcDesiredFrequency_);
+        // RCLCPP_INFO_THROTTLE(
+        //     node_->get_logger(),
+        //     *node_->get_clock(),
+        //     1000,
+        //     "\n\033[1;36m====================================================\033[0m"
+        //     "\n\033[1;36m[ NMPC 实时性能报告 ]\033[0m 🚀"
+        //     "\n\033[1;36m----------------------------------------------------\033[0m"
+        //     "\n  求解总数   : %d 次"
+        //     "\n  平均耗时   : \033[1;32m%.3f\033[0m ms"
+        //     "\n  最大耗时   : \033[1;31m%.3f\033[0m ms"
+        //     "\n  实时要求   : < %.3f ms"
+        //     "\n\033[1;36m====================================================\033[0m",
+        //     mpcTimer_.getNumTimedIntervals(),
+        //     mpcTimer_.getAverageInMilliseconds(),
+        //     mpcTimer_.getMaxIntervalInMilliseconds(),
+        //     1000.0 / leggedInterface_->mpcSettings().mpcDesiredFrequency_);
     }
 
     NmpcController::~NmpcController()

@@ -9,7 +9,9 @@ namespace dog_controllers
         const PinocchioEndEffectorKinematics &eeKinematics,
         rclcpp_lifecycle::LifecycleNode::SharedPtr &node)
         : pinocchioInterface_(pinocchioInterface),
-          eeKinematics_(eeKinematics.clone()), node_(node)
+          info_(info),
+          eeKinematics_(eeKinematics.clone()),
+          node_(node)
     {
         results.rbdState_36 = vector_t::Zero(2 * info.generalizedCoordinatesNum);
         results.contactFlags_WBC.fill(true);
@@ -54,5 +56,38 @@ namespace dog_controllers
         currentObservation_.state = rbdConversions_->computeCentroidalStateFromRbdModel(results.rbdState_36);
         currentObservation_.state(9) = yawLast + angles::shortest_angular_distance(yawLast, currentObservation_.state(9));
         currentObservation_.mode = results.contactFlags_MPC;
+    }
+
+    void StateEstimatorBase::updateJacobians()
+    {
+        const auto &model = pinocchioInterface_.getModel();
+        auto &data = pinocchioInterface_.getData();
+
+        vector_t qPino = vector_t::Zero(info_.generalizedCoordinatesNum);
+        qPino.segment<3>(3) = results.rbdState_36.head<3>();
+        qPino.tail(12) = results.rbdState_36.segment(6, 12);
+
+        pinocchio::forwardKinematics(model, data, qPino);
+        pinocchio::updateFramePlacements(model, data);
+
+        // OCS2 顺序: 0:LF, 1:RF, 2:LH, 3:RH
+        // Pinocchio 顺序: LF:6, LH:9, RF:12, RH:15
+        for (size_t i = 0; i < 4; ++i)
+        {
+            matrix_t J_full = matrix_t::Zero(6, info_.generalizedCoordinatesNum);
+            pinocchio::getFrameJacobian(model, data, info_.endEffectorFrameIndices[i], pinocchio::LOCAL_WORLD_ALIGNED, J_full);
+
+            int startCol = 6; // 默认偏移
+            if (i == 0)
+                startCol = 6; // LF 对应 URDF 的第 1 组关节
+            if (i == 1)
+                startCol = 12; // RF 对应 URDF 的第 3 组关节
+            if (i == 2)
+                startCol = 9; // LH 对应 URDF 的第 2 组关节
+            if (i == 3)
+                startCol = 15; // RH 对应 URDF 的第 4 组关节
+
+            results.legJacobians[i] = J_full.block<3, 3>(0, startCol);
+        }
     }
 }

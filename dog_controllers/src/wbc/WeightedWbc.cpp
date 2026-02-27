@@ -91,20 +91,20 @@ namespace dog_controllers
 
         float total_fz = qpSol(18 + 2) + qpSol(18 + 5) + qpSol(18 + 8) + qpSol(18 + 11);
         wbcTimer_.endTimer();
-        RCLCPP_INFO_THROTTLE(
-            node_->get_logger(),
-            *node_->get_clock(),
-            10000,
-            "\n\033[1;35m====================================================\033[0m"
-            "\n\033[1;35m[ WBC 实时性能报告 ]\033[0m 🛡️"
-            "\n\033[1;35m----------------------------------------------------\033[0m"
-            "\n  求解总数   : %d 次"
-            "\n  平均耗时   : \033[1;32m%.3f\033[0m ms"
-            "\n  最大耗时   : \033[1;31m%.3f\033[0m ms"
-            "\n\033[1;35m====================================================\033[0m",
-            wbcTimer_.getNumTimedIntervals(),
-            wbcTimer_.getAverageInMilliseconds(),
-            wbcTimer_.getMaxIntervalInMilliseconds());
+        // RCLCPP_INFO_THROTTLE(
+        //     node_->get_logger(),
+        //     *node_->get_clock(),
+        //     100,
+        //     "\n\033[1;35m====================================================\033[0m"
+        //     "\n\033[1;35m[ WBC 实时性能报告 ]\033[0m 🛡️"
+        //     "\n\033[1;35m----------------------------------------------------\033[0m"
+        //     "\n  求解总数   : %d 次"
+        //     "\n  平均耗时   : \033[1;32m%.3f\033[0m ms"
+        //     "\n  最大耗时   : \033[1;31m%.3f\033[0m ms"
+        //     "\n\033[1;35m====================================================\033[0m",
+        //     wbcTimer_.getNumTimedIntervals(),
+        //     wbcTimer_.getAverageInMilliseconds(),
+        //     wbcTimer_.getMaxIntervalInMilliseconds());
 
         return qpSol;
     }

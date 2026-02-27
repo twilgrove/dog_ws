@@ -1,5 +1,5 @@
 // 动力学模型类型：0 - 全质心动力学，1 - 单刚体动力学
-centroidalModelType             1  
+centroidalModelType             0  
   
 // 机器人接口全局设置
 legged_robot_interface
@@ -137,7 +137,7 @@ rollout
 // MPC 核心参数
 mpc
 {
-  timeHorizon                     1.0  ; // 预测时域长度（秒）
+  timeHorizon                     0.3  ; // 预测时域长度（秒）
   solutionTimeWindow              -1   ; // 解决方案的时间窗口（-1 代表不限制）
   coldStart                       false // 是否冷启动（不使用上一帧解）
 
@@ -161,7 +161,7 @@ initialState
    ;; 基座姿态: [位置(3), 欧拉角(3)] ;;
    (6,0)  0.0     ; p_base_x
    (7,0)  0.0     ; p_base_y
-   (8,0)  0.32    ; p_base_z (初始站立高度)
+   (8,0)  0.306    ; p_base_z (初始站立高度)
    (9,0)  0.0     ; theta_base_z (偏航角 Yaw)
    (10,0) 0.0     ; theta_base_y (俯仰角 Pitch)
    (11,0) 0.0     ; theta_base_x (横滚角 Roll)
@@ -254,7 +254,7 @@ R
 // 摩擦锥软约束设置：防止足端打滑
 frictionConeSoftConstraint
 {
-  frictionCoefficient    0.3  ; 预期的地面摩擦系数 ##(0.5)
+  frictionCoefficient    0.4  ; 预期的地面摩擦系数 ##(0.5)
 
   ; 松弛对数障碍参数 (Relaxed Log Barrier)
   mu                     0.1
@@ -316,9 +316,9 @@ swingLegTask
 // WBC 各项子任务的权重分配平方：数值越大，优先级越高
 weight
 {
-    nWSR            50 //迭代次数
+    nWSR            20 //迭代次数
     swingLeg        100      
-    baseAccel       1     
+    baseAccel       1.0     
     contactForce    0.01     
 }
 

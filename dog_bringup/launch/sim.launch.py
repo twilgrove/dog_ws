@@ -70,12 +70,6 @@ def generate_launch_description():
         arguments=["DogNmpcWbcController"],
     )
 
-    load_joint_state_broadcaster = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=["joint_state_broadcaster"],
-    )
-
     dog_controller_container = ComposableNodeContainer(
         name="dog_controller_container",
         namespace="",
@@ -109,9 +103,7 @@ def generate_launch_description():
     ld.add_action(gazebo)
     ld.add_action(spawn_entity)
 
-    # ld.add_action(load_joint_state_broadcaster)
     ld.add_action(controller)
-
-    # ld.add_action(dog_controller_container)
+    ld.add_action(dog_controller_container)
 
     return ld

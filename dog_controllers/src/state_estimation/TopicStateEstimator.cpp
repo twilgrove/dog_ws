@@ -47,6 +47,7 @@ namespace dog_controllers
         results.rbdState_36.segment<3>(18) << twist.angular.x, twist.angular.y, twist.angular.z;
         updateGenericResults(pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z, legsPtr);
         updateObservationFromResults(period);
+        updateJacobians();
         return results.rbdState_36;
     }
 
