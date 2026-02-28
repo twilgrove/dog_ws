@@ -30,11 +30,8 @@ namespace dog_controllers
         statePub_ = node_->create_publisher<dog_bringup::msg::DogState>(
             "dog_robot_state", rclcpp::SensorDataQoS());
         stateMsg_.header.frame_id = "world";
-
-        tfBroadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(node_);
         observationPub_ = node_->create_publisher<ocs2_msgs::msg::MpcObservation>(
             "dog_robot_mpc_observation", 10);
-
         RCLCPP_INFO(node_->get_logger(), "\033[1;32m[ 初始化完成 ] ✅ DebugManager\033[0m");
         RCLCPP_INFO(node_->get_logger(), "\033[1;32m====================================================\033[0m");
     }
@@ -43,40 +40,14 @@ namespace dog_controllers
                                     const PrimalSolution &primalSolution,
                                     const CommandData &command)
     {
-        delt_Time_ = observation.time - lastTime_;
-
-        if (delt_Time_ >= 0.05)
+        if (observation.time - lastTime_ >= threshold)
         {
-            // publishTF();
+            publishStateData();
             publishObservation(observation);
             lastTime_ = observation.time;
         }
         visualizerPtr_->update(observation, primalSolution, command);
     }
-    void DebugManager::publishTF()
-    {
-        const auto &s = results_->rbdState_36;
-        auto now = node_->get_clock()->now();
-
-        geometry_msgs::msg::TransformStamped t;
-        t.header.stamp = now;
-        t.header.frame_id = "odom";
-        t.child_frame_id = "base_link";
-
-        t.transform.translation.x = s(3);
-        t.transform.translation.y = s(4);
-        t.transform.translation.z = s(5);
-
-        tf2::Quaternion q;
-        q.setRPY(s(2), s(1), s(0));
-        t.transform.rotation.x = q.x();
-        t.transform.rotation.y = q.y();
-        t.transform.rotation.z = q.z();
-        t.transform.rotation.w = q.w();
-
-        tfBroadcaster_->sendTransform(t);
-    }
-
     void DebugManager::publishObservation(const SystemObservation &observation)
     {
         auto msg = ocs2::ros_msg_conversions::createObservationMsg(observation);

@@ -86,7 +86,8 @@ namespace dog_controllers
 
         compute();
 
-        results.rbdState_36.segment<3>(3) = xHat_.segment<3>(0);  // 世界系位置
+        results.rbdState_36.segment<3>(3) = xHat_.segment<3>(0); // 世界系位置
+        // results.rbdState_36(5) = xHat_(2);
         results.rbdState_36.segment<3>(21) = xHat_.segment<3>(3); // 世界系线速度
 
         updateObservationFromResults(period);
@@ -161,7 +162,7 @@ namespace dog_controllers
 
         // 4. 动态调整 Q 和 R
         const scalar_t suspect_q = 100.0;
-        const scalar_t suspect_r = 1e4;
+        const scalar_t suspect_r = 100.0;
 
         for (size_t i = 0; i < numContacts_; ++i)
         {

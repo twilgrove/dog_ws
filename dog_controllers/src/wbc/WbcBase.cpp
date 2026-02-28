@@ -228,11 +228,13 @@ namespace dog_controllers
         matrix_t a(6, numDecisionVars_);
         a.setZero();
         a.block(0, 0, 6, 6) = matrix_t::Identity(6, 6);
-
+        vector_t jointAccel = vector_t::Zero(info_.actuatedDofNum);
         // 计算期望的关节加速度
-        vector_t jointAccel = centroidal_model::getJointVelocities(inputDesired - inputLast_, info_) / period;
+        if (firstRun_)
+            firstRun_ = false;
+        else
+            jointAccel = centroidal_model::getJointVelocities(inputDesired - inputLast_, info_) / period;
         inputLast_ = inputDesired;
-
         // 基于质心动量矩阵 (CMM) 计算机身加速度目标
         const auto &A = getCentroidalMomentumMatrix(pinocchioInterfaceDesired_);
         const Matrix6 Ab = A.template leftCols<6>();

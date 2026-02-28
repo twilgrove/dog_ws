@@ -86,6 +86,7 @@ namespace dog_controllers
         rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
         benchmark::RepeatedTimer wbcTimer_;
         int wbcnWSR_;
+        bool firstRun_ = true;
         // --- 任务增益与物理限制 ---
         vector_t torqueLimits_{};        // 关节力矩限制
         scalar_t frictionCoeff_{};       // 摩擦系数

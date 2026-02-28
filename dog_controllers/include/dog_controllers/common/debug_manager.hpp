@@ -50,7 +50,6 @@ namespace dog_controllers
         std::unique_ptr<ocs2::legged_robot::LeggedRobotVisualizer> visualizerPtr_;
 
         dog_bringup::msg::DogState stateMsg_;
-        std::unique_ptr<tf2_ros::TransformBroadcaster> tfBroadcaster_;
         rclcpp::Publisher<ocs2_msgs::msg::MpcObservation>::SharedPtr observationPub_;
         rclcpp::Publisher<dog_bringup::msg::DogState>::SharedPtr statePub_;
         rclcpp::Node::SharedPtr node_;

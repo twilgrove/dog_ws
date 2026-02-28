@@ -31,12 +31,12 @@ initialModeSchedule
 {
   modeSequence
   {
-    [0]  STANCE    // 初始阶段 0：保持站立
-    [1]  STANCE    // 初始阶段 1：继续保持站立
+    [0]  STANCE，即保持不变
+    [1]  STANCE
   }
   eventTimes
   {
-    [0]  0.5       // 在 0.5 秒时发生状态切换 (此处是从 STANCE 切到 STANCE，即保持不变)
+    [0]  0.5
   }
 }
 
@@ -44,13 +44,15 @@ initialModeSchedule
 // 当没有新的指令下发时，机器人会循环执行这个模板
 defaultModeSequenceTemplate
 {
-  modeSequence
-  {
-    [0]  STANCE    // 默认模式：全支撑站立 (STANCE)
-  }
-  switchingTimes
-  {
-    [0]  0.0       // 周期开始时间
-    [1]  1.0       // 周期结束时间 (代表该站立模板总长 1.0 秒)
-  }
+   modeSequence
+   {
+     [0]     LF_RH
+     [1]     RF_LH
+   }
+   switchingTimes
+   {
+     [0]     0.0
+     [1]     0.3
+     [2]     0.6
+   }
 }

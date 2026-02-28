@@ -28,7 +28,7 @@ namespace dog_controllers
             robotName,
             leggedInterface_->getReferenceManagerPtr());
 
-        // rosReferenceManagerPtr->subscribe(node_);
+        rosReferenceManagerPtr->subscribe(node_);
 
         mpcPtr_->getSolverPtr()->addSynchronizedModule(gaitReceiverPtr);
         mpcPtr_->getSolverPtr()->setReferenceManager(rosReferenceManagerPtr);
@@ -42,26 +42,26 @@ namespace dog_controllers
 
     void NmpcController::start(const SystemObservation &initObservation)
     {
-        TargetTrajectories target;
-        scalar_t t = initObservation.time;
+        // TargetTrajectories target;
+        // scalar_t t = initObservation.time;
 
-        target.timeTrajectory = {t, t + 1.0, t + 10.0, t + 50.0, t + 100.0};
+        // target.timeTrajectory = {t, t + 1.0, t + 10.0, t + 50.0, t + 100.0};
 
-        vector_t goalState = vector_t::Zero(24);
-        goalState(8) = 0.306; // 目标高度
-        for (int k = 0; k < 4; k++)
-        {
-            goalState(12 + k * 3 + 0) = 0.0;  // HAA
-            goalState(12 + k * 3 + 1) = -0.8; // HFE
-            goalState(12 + k * 3 + 2) = 1.5;  // KFE
-        }
-        target.stateTrajectory = {goalState, goalState, goalState, goalState, goalState};
-        target.inputTrajectory = {vector_t::Zero(24), vector_t::Zero(24), vector_t::Zero(24), vector_t::Zero(24), vector_t::Zero(24)};
+        // vector_t goalState = vector_t::Zero(24);
+        // goalState(8) = 0.306; // 目标高度
+        // for (int k = 0; k < 4; k++)
+        // {
+        //     goalState(12 + k * 3 + 0) = 0.0;  // HAA
+        //     goalState(12 + k * 3 + 1) = -0.8; // HFE
+        //     goalState(12 + k * 3 + 2) = 1.5;  // KFE
+        // }
+        // target.stateTrajectory = {goalState, goalState, goalState, goalState, goalState};
+        // target.inputTrajectory = {vector_t::Zero(24), vector_t::Zero(24), vector_t::Zero(24), vector_t::Zero(24), vector_t::Zero(24)};
 
-        // // 设置初始目标轨迹（原地静止）
-        // TargetTrajectories targetTrajectories({initObservation.time},
-        //                                       {initObservation.state},
-        //                                       {initObservation.input});
+        // 设置初始目标轨迹（原地静止）
+        TargetTrajectories target({initObservation.time},
+                                  {initObservation.state},
+                                  {initObservation.input});
 
         mpcMrtInterface_->setCurrentObservation(initObservation);
         mpcMrtInterface_->getReferenceManager().setTargetTrajectories(target);

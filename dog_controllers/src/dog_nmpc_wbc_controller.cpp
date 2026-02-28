@@ -143,144 +143,52 @@ namespace dog_controllers
         {
             nmpc_controller_->update(state_estimator_->currentObservation_, optimizedState, optimizedInput, plannedMode);
 
+            vector_t qpResult = wbc_->update(optimizedState, optimizedInput, state_estimator_->results.rbdState_36, plannedMode, period.seconds());
+
+            vector_t torqueEffort = qpResult.tail(12);
             vector_t posDes = optimizedState.segment(12, 12);
             vector_t velDes = optimizedInput.segment(12, 12);
-            vector_t forceDes = optimizedInput.segment(0, 12);
-
-            int hToF[] = {0, 2, 1, 3};
-            struct LegDiag
-            {
-                vector3_t f;
-                vector3_t tau;
-            };
-            LegDiag diags[4];
             for (int i = 0; i < 4; ++i)
             {
-                int jointStart = i * 3;
-
-                int forceIdx = hToF[i];
-                vector3_t legForce = forceDes.segment<3>(forceIdx * 3);
-
-                const matrix3_t &J = state_estimator_->results.legJacobians[forceIdx];
-
-                vector3_t legTorque = -J.transpose() * legForce;
-                diags[i].f = legForce;
-                diags[i].tau = legTorque;
                 for (int j = 0; j < 3; ++j)
                 {
-                    auto &joint = bridge_->legs[i].joints[j];
-                    joint->cmd_pos = posDes(jointStart + j);
-                    joint->cmd_vel = velDes(jointStart + j);
-
-                    joint->cmd_kp = 30.0;
-                    joint->cmd_kd = 3.0;
-                    joint->cmd_ff = std::max(-40.0, std::min(40.0, legTorque(j)));
+                    int jointIdx = i * 3 + j;
+                    bridge_->legs[i].joints[j]->cmd_pos = posDes(jointIdx);
+                    bridge_->legs[i].joints[j]->cmd_vel = velDes(jointIdx);
+                    bridge_->legs[i].joints[j]->cmd_kp = 0.0;
+                    bridge_->legs[i].joints[j]->cmd_kd = 3.0;
+                    bridge_->legs[i].joints[j]->cmd_ff = torqueEffort(jointIdx);
                 }
             }
-            double base_yaw = state_estimator_->results.rbdState_36(0) * 180.0 / M_PI;
-            double base_pitch = state_estimator_->results.rbdState_36(1) * 180.0 / M_PI;
-            double base_roll = state_estimator_->results.rbdState_36(2) * 180.0 / M_PI;
-
-            // 2. 打印增强型全景诊断表
-            RCLCPP_INFO_THROTTLE(node_->get_logger(), *node_->get_clock(), 50,
-                                 "\n"
-                                 "----------------------- [ 全身力控诊断表 (NMPC) ] -----------------------\n"
-                                 "| [机身姿态]  Roll: %6.2f deg  |  Pitch: %6.2f deg  |  Yaw: %6.2f deg |\n"
-                                 "|-----------------------------------------------------------------------|\n"
-                                 "| 腿部 (Idx) | Fx(纵) | Fy(横) | Fz(垂) | Tau_HAA | Tau_HFE | Tau_KFE |\n"
-                                 "|------------|---------|---------|---------|---------|---------|---------|\n"
-                                 "| LF (Hw 0)  | %7.1f | %7.1f | %7.1f | %7.2f | %7.2f | %7.2f |\n"
-                                 "| LH (Hw 1)  | %7.1f | %7.1f | %7.1f | %7.2f | %7.2f | %7.2f |\n"
-                                 "| RF (Hw 2)  | %7.1f | %7.1f | %7.1f | %7.2f | %7.2f | %7.2f |\n"
-                                 "| RH (Hw 3)  | %7.1f | %7.1f | %7.1f | %7.2f | %7.2f | %7.2f |\n"
-                                 "-------------------------------------------------------------------------",
-                                 base_roll, base_pitch, base_yaw,
-                                 diags[0].f(0), diags[0].f(1), diags[0].f(2), diags[0].tau(0), diags[0].tau(1), diags[0].tau(2),
-                                 diags[1].f(0), diags[1].f(1), diags[1].f(2), diags[1].tau(0), diags[1].tau(1), diags[1].tau(2),
-                                 diags[2].f(0), diags[2].f(1), diags[2].f(2), diags[2].tau(0), diags[2].tau(1), diags[2].tau(2),
-                                 diags[3].f(0), diags[3].f(1), diags[3].f(2), diags[3].tau(0), diags[3].tau(1), diags[3].tau(2));
-
-            // vector_t qpResult = wbc_->update(optimizedState, optimizedInput, state_estimator_->results.rbdState_36, plannedMode, period.seconds());
-
-            // // 提取数据用于诊断
-            // vector_t torqueEffort = qpResult.tail(12); // WBC 输出的最终扭矩
-            // // 提取 WBC 计算出的足端接触力 (在你的决策变量中，力在中间段)
-            // // 索引：[0:18] 是加速度, [18:18+12] 是力, [30:42] 是扭矩
-            // vector_t wbcForce = qpResult.segment(18, 12);
-            // vector_t mpcForce = optimizedInput.head(12); // MPC 期望的 GRF
-
-            // vector_t posDes = optimizedState.segment(12, 12);
-            // vector_t velDes = optimizedInput.segment(12, 12);
-            // // 获取当前实际位置和速度（用于对比）
-            // vector_t posMeas = state_estimator_->results.rbdState_36.segment(6, 12);
-            // vector_t velMeas = state_estimator_->results.rbdState_36.segment(18 + 6, 12);
-
-            // // 循环赋值给电机（保持你原来的逻辑）
-            // for (int i = 0; i < 4; ++i)
-            // {
-            //     for (int j = 0; j < 3; ++j)
-            //     {
-            //         int jointIdx = i * 3 + j;
-            //         bridge_->legs[i].joints[j]->cmd_pos = posDes(jointIdx);
-            //         bridge_->legs[i].joints[j]->cmd_vel = velDes(jointIdx);
-            //         bridge_->legs[i].joints[j]->cmd_kp = 0.0; // 纯力控模式，或者按需给点 KP
-            //         bridge_->legs[i].joints[j]->cmd_kd = 3.0;
-            //         bridge_->legs[i].joints[j]->cmd_ff = torqueEffort(jointIdx);
-            //     }
-            // }
-
-            // // --- 打印增强型全景诊断表 ---
-            // RCLCPP_INFO_THROTTLE(node_->get_logger(), *node_->get_clock(), 100, // 每100ms打印一次
-            //                      "\n"
-            //                      "======================== [ WBC 实时动力学监控 ] ========================\n"
-            //                      "| 腿部 |    MPC 期望力 (Z)    |    WBC 优化力 (Z)    |   最终 FF 扭矩 (KFE)  |\n"
-            //                      "|------|--------------------|--------------------|-----------------------|\n"
-            //                      "| LF   |      %8.2f      |      %8.2f      |       %8.2f        |\n"
-            //                      "| LH   |      %8.2f      |      %8.2f      |       %8.2f        |\n"
-            //                      "| RF   |      %8.2f      |      %8.2f      |       %8.2f        |\n"
-            //                      "| RH   |      %8.2f      |      %8.2f      |       %8.2f        |\n"
-            //                      "|-----------------------------------------------------------------------|\n"
-            //                      "| 关节 |   期望位置 (Deg)   |   实际位置 (Deg)   |   期望速度 (Rad/s)  |\n"
-            //                      "|------|--------------------|--------------------|-----------------------|\n"
-            //                      "| LF_K |      %8.2f      |      %8.2f      |       %8.2f        |\n"
-            //                      "| RF_K |      %8.2f      |      %8.2f      |       %8.2f        |\n"
-            //                      "=========================================================================",
-            //                      mpcForce(2), wbcForce(2), torqueEffort(2),                  // LF
-            //                      mpcForce(8), wbcForce(8), torqueEffort(5),                  // LH
-            //                      mpcForce(5), wbcForce(5), torqueEffort(8),                  // RF
-            //                      mpcForce(11), wbcForce(11), torqueEffort(11),               // RH
-            //                      posDes(2) * 180 / M_PI, posMeas(2) * 180 / M_PI, velDes(2), // 拿 LF 小腿举例
-            //                      posDes(8) * 180 / M_PI, posMeas(8) * 180 / M_PI, velDes(8)  // 拿 RF 小腿举例
-            // );
 
             debug_manager_->update_debug(state_estimator_->currentObservation_, nmpc_controller_->mpcMrtInterface_->getPolicy(), nmpc_controller_->mpcMrtInterface_->getCommand());
         }
         bridge_->write_to_hw();
         mainLoopTimer_.endTimer();
 
-        // RCLCPP_INFO_THROTTLE(node_->get_logger(), *node_->get_clock(), 300,
-        //                      "\n\033[1;36m[ 🤖 机器人综合诊断报告 ] >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\033[0m"
-        //                      "\n\033[1;33m[ 1. 物理状态 ]\033[0m"
-        //                      "\n  实测高度 (Z) : \033[1;32m%.3f\033[0m m  |  实测速度 (Vz) : %.3f m/s"
-        //                      "\n  当前模式     : %s"
-        //                      "\n\033[1;33m[ 2. NMPC 规划 ]\033[0m"
-        //                      "\n  最终目标高度 : \033[1;35m%.3f\033[0m m  |  当前规划高度 : %.3f m" // 修改这里
-        //                      "\n  步态模式     : %zu (15=全支撑)"
-        //                      "\n  期望力(Fz)   : LF:%.1f, RF:%.1f, LH:%.1f, RH:%.1f N"
-        //                      "\n  LF 关节参考   : HAA:%.2f, HFE:%.2f, KFE:%.2f rad"
-        //                      "\n\033[1;33m[ 3. 控制性能 ]\033[0m"
-        //                      "\n  主循环平均耗时 : \033[1;32m%.3f\033[0m ms  |  运行总数 : %d 次"
-        //                      "\n\033[1;36m<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\033[0m",
-        //                      state_estimator_->currentObservation_.state(8),
-        //                      state_estimator_->currentObservation_.state(2),
-        //                      (currentState_ == ControlState::JOINT_STANDUP ? "\033[1;35m关节起立中\033[0m" : "\033[1;32mNMPC激活\033[0m"),
-        //                      0.306,
-        //                      optimizedState(8),
-        //                      plannedMode,
-        //                      optimizedInput(2), optimizedInput(5), optimizedInput(8), optimizedInput(11),
-        //                      optimizedState(12), optimizedState(13), optimizedState(14),
-        //                      mainLoopTimer_.getAverageInMilliseconds(),
-        //                      mainLoopTimer_.getNumTimedIntervals());
+        RCLCPP_INFO_THROTTLE(node_->get_logger(), *node_->get_clock(), 300,
+                             "\n\033[1;36m[ 🤖 机器人综合诊断报告 ] >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\033[0m"
+                             "\n\033[1;33m[ 1. 物理状态 ]\033[0m"
+                             "\n  实测高度 (Z) : \033[1;32m%.3f\033[0m m  |  实测速度 (Vz) : %.3f m/s"
+                             "\n  当前模式     : %s"
+                             "\n\033[1;33m[ 2. NMPC 规划 ]\033[0m"
+                             "\n  最终目标高度 : \033[1;35m%.3f\033[0m m  |  当前规划高度 : %.3f m" // 修改这里
+                             "\n  步态模式     : %zu (15=全支撑)"
+                             "\n  期望力(Fz)   : LF:%.1f, RF:%.1f, LH:%.1f, RH:%.1f N"
+                             "\n  LF 关节参考   : HAA:%.2f, HFE:%.2f, KFE:%.2f rad"
+                             "\n\033[1;33m[ 3. 控制性能 ]\033[0m"
+                             "\n  主循环平均耗时 : \033[1;32m%.3f\033[0m ms  |  运行总数 : %d 次"
+                             "\n\033[1;36m<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\033[0m",
+                             state_estimator_->currentObservation_.state(8),
+                             state_estimator_->currentObservation_.state(2),
+                             (currentState_ == ControlState::JOINT_STANDUP ? "\033[1;35m关节起立中\033[0m" : "\033[1;32mNMPC激活\033[0m"),
+                             0.306,
+                             optimizedState(8),
+                             plannedMode,
+                             optimizedInput(2), optimizedInput(5), optimizedInput(8), optimizedInput(11),
+                             optimizedState(12), optimizedState(13), optimizedState(14),
+                             mainLoopTimer_.getAverageInMilliseconds(),
+                             mainLoopTimer_.getNumTimedIntervals());
 
         return controller_interface::return_type::OK;
     }
