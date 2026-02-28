@@ -41,6 +41,7 @@
 
   <depend>dog_common</depend>
   <depend>dog_bringup</depend>
+  <depend>dog_hardware</depend>
 
   <build_depend>rosidl_default_generators</build_depend>
   <exec_depend>rosidl_default_runtime</exec_depend>

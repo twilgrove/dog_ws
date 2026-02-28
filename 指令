@@ -1,5 +1,0 @@
-colcon build --packages-up-to ocs2_legged_robot_ros
-#单包编译
-colcon build --packages-select dog_controllers --symlink-install
-#一键安装
-rosdep install --from-paths src --ignore-src -r -y

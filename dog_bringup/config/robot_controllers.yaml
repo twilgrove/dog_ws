@@ -27,7 +27,7 @@ controller_manager:
       
 DogNmpcWbcController:
   ros__parameters:
-    threshold: 0.01
+    threshold: 0.005
     joints:
       - LF_HAA
       - LF_HFE

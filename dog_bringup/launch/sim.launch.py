@@ -21,6 +21,7 @@ def generate_launch_description():
     urdf_output_dir = os.path.join(pkg, "config", "description")
     urdf_output_file = os.path.join(urdf_output_dir, "dog.urdf")
     world_file = os.path.join(pkg, "config", "dog.world")
+    rviz__config_file = os.path.join(pkg, "dog.rviz")
 
     generate_urdf = ExecuteProcess(
         cmd=[
@@ -33,6 +34,14 @@ def generate_launch_description():
         ],
         shell=True,
         output="screen",
+    )
+
+    rviz_node = Node(
+        package="rviz2",
+        executable="rviz2",
+        name="rviz2",
+        output="screen",
+        arguments=["-d", rviz__config_file],
     )
 
     gazebo = IncludeLaunchDescription(
@@ -100,6 +109,7 @@ def generate_launch_description():
     ld = LaunchDescription()
 
     ld.add_action(generate_urdf)
+    ld.add_action(rviz_node)
     ld.add_action(gazebo)
     ld.add_action(spawn_entity)
 

@@ -52,7 +52,7 @@ namespace ocs2
         public:
             /* --- 可视化配置参数 --- */
             std::string frameId_ = "odom";             // 所有消息发布的坐标系，通常是全球坐标系 odom 或 world
-            scalar_t footMarkerDiameter_ = 0.03;       // RViz 中足端球体的大小
+            scalar_t footMarkerDiameter_ = 0.05;       // RViz 中足端球体的大小
             scalar_t footAlphaWhenLifted_ = 0.3;       // 摆动腿（抬起时）的透明度
             scalar_t forceScale_ = 1000.0;             // 接触力矢量箭头的缩放比例 (N/m)
             scalar_t velScale_ = 5.0;                  // 速度矢量箭头的缩放比例
