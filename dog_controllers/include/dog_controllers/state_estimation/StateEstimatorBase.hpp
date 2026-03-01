@@ -2,7 +2,8 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
-#include "common/dog_data_bridge.hpp"
+
+#include <nav_msgs/msg/odometry.hpp>
 #include <ocs2_core/Types.h>
 #include <ocs2_legged_robot/common/Types.h>
 #include <ocs2_pinocchio_interface/PinocchioInterface.h>
@@ -16,6 +17,7 @@
 #include <pinocchio/algorithm/frames.hpp>
 #include <pinocchio/algorithm/rnea.hpp>
 
+#include "common/dog_data_bridge.hpp"
 namespace dog_controllers
 {
     using namespace ocs2;
@@ -62,6 +64,10 @@ namespace dog_controllers
         std::unique_ptr<PinocchioEndEffectorKinematics> eeKinematics_;
         std::unique_ptr<CentroidalModelRbdConversions> rbdConversions_;
 
+        bool msgReceived_ = false;
+        std::mutex mutex_;
+        nav_msgs::msg::Odometry::SharedPtr lastOdomPtr_;
+        rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr sub_;
         rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
 
         inline vector3_t quatToZyx(const Eigen::Quaternion<scalar_t> &q)

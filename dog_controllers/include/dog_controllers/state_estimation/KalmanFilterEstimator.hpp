@@ -27,6 +27,8 @@ namespace dog_controllers
         void prepareMatrices(const std::array<LegData, 4> &legsPtr, const ImuData &imuData, const rclcpp::Duration &period);
         void compute();
 
+        void odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
+
         constexpr static size_t numContacts_ = 4;  // 接触点数：4个脚
         constexpr static size_t dimContacts_ = 12; // 接触总维度：4个脚 * 3维 = 12
         constexpr static size_t numState_ = 18;    // 状态向量维度：身体位置(3) + 身体速度(3) + 4个脚位置(3*4=12)

@@ -19,6 +19,11 @@ namespace dog_controllers
         RCLCPP_INFO(node_->get_logger(), "\033[1;36m====================================================\033[0m");
         RCLCPP_INFO(node_->get_logger(), "\033[1;36m[ 初始化开始 ] 🚀 KalmanFilterEstimator\033[0m");
 
+        sub_ = node->create_subscription<nav_msgs::msg::Odometry>(
+            "/ground_truth", rclcpp::SensorDataQoS().keep_last(1),
+            [this](const nav_msgs::msg::Odometry::SharedPtr msg)
+            { this->odomCallback(msg); });
+
         boost::property_tree::ptree pt;
         boost::property_tree::read_info(taskFile, pt);
         std::string prefix = "kalmanFilter.";
@@ -86,9 +91,19 @@ namespace dog_controllers
 
         compute();
 
-        results.rbdState_36.segment<3>(3) = xHat_.segment<3>(0); // 世界系位置
-        // results.rbdState_36(5) = xHat_(2);
+        results.rbdState_36.segment<3>(3) = xHat_.segment<3>(0);  // 世界系位置
         results.rbdState_36.segment<3>(21) = xHat_.segment<3>(3); // 世界系线速度
+
+        if (msgReceived_)
+        {
+            nav_msgs::msg::Odometry::SharedPtr currentMsg;
+            {
+                std::lock_guard<std::mutex> lock(mutex_);
+                currentMsg = lastOdomPtr_;
+            }
+            const auto &pose = currentMsg->pose.pose;
+            results.rbdState_36.segment<3>(3) << pose.position.x, pose.position.y, pose.position.z;
+        }
 
         updateObservationFromResults(period);
 
@@ -215,4 +230,10 @@ namespace dog_controllers
         p_ = (p_ + p_.transpose()) * 0.5;
     }
 
+    void KalmanFilterEstimator::odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg)
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        lastOdomPtr_ = msg;
+        msgReceived_ = true;
+    }
 } // namespace dog_controllers

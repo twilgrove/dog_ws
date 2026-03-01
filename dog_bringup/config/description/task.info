@@ -137,7 +137,7 @@ rollout
 // MPC 核心参数
 mpc
 {
-  timeHorizon                     0.3  ; // 预测时域长度（秒）
+  timeHorizon                     1.0  ; // 预测时域长度（秒）
   solutionTimeWindow              -1   ; // 解决方案的时间窗口（-1 代表不限制）
   coldStart                       false // 是否冷启动（不使用上一帧解）
 

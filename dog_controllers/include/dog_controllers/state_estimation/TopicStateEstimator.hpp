@@ -1,7 +1,7 @@
 #pragma once
 
 #include "state_estimation/StateEstimatorBase.hpp"
-#include <nav_msgs/msg/odometry.hpp>
+
 #include <mutex>
 
 namespace dog_controllers
@@ -21,13 +21,5 @@ namespace dog_controllers
 
     private:
         void odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
-
-        rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr sub_;
-
-        std::mutex mutex_;
-        nav_msgs::msg::Odometry::SharedPtr lastOdomPtr_;
-        bool msgReceived_ = false;
-
-        nav_msgs::msg::Odometry odomSnapshot_;
     };
 }

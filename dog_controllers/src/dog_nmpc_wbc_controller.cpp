@@ -89,8 +89,17 @@ namespace dog_controllers
     {
         mainLoopTimer_.startTimer();
         bridge_->read_from_hw();
-        state_estimator_->estimate(bridge_->legs, bridge_->imu, period);
+        /*----------------无足端触地传感器----------------*/
+        auto contactFlags = modeNumber2StanceLeg(nmpc_controller_->mpcMrtInterface_->getReferenceManager()
+                                                     .getModeSchedule()
+                                                     .modeAtTime(state_estimator_->currentObservation_.time));
+        bridge_->legs[0].contact = contactFlags[0] ? 1.0 : 0.0; // LF
+        bridge_->legs[2].contact = contactFlags[1] ? 1.0 : 0.0; // RF
+        bridge_->legs[1].contact = contactFlags[2] ? 1.0 : 0.0; // LH
+        bridge_->legs[3].contact = contactFlags[3] ? 1.0 : 0.0; // RH
+        /*-----------------------------------------------*/
 
+        state_estimator_->estimate(bridge_->legs, bridge_->imu, period);
         // --- 初始化临时变量，防止仪表盘读取随机内存 ---
         vector_t optimizedState = vector_t::Zero(24);
         vector_t optimizedInput = vector_t::Zero(24);
